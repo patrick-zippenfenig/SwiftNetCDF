@@ -1,0 +1,18 @@
+//
+//  Overrides.xcconfig
+//  SwiftNetCDF
+//
+//  Xcode project files are automatically generated with 'make xcode'. This overrides some parameters to find includes etc
+//
+//  Created by Patrick Zippenfenig on 2017-10-05.
+//
+
+// ### mac setup notes:
+// xcode-select --install
+// brew install netcdf
+
+USER_HEADER_SEARCH_PATHS = /usr/local/include
+LIBRARY_SEARCH_PATHS = "/usr/local/lib"
+SUPPORTED_PLATFORMS = macosx
+
+

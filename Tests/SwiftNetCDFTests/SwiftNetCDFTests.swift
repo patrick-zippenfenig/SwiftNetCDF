@@ -1,12 +1,12 @@
 import XCTest
-@testable import swift_netcdf
+@testable import SwiftNetCDF
 
-final class swift_netcdfTests: XCTestCase {
+final class SwiftNetCDFTests: XCTestCase {
     func testExample() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct
         // results.
-        XCTAssertEqual(swift_netcdf().text, "Hello, World!")
+        XCTAssertEqual(SwiftNetCDF().text, "Hello, World!")
     }
 
     static var allTests = [

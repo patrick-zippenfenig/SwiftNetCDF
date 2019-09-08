@@ -1,7 +1,7 @@
 import XCTest
 
-import swift_netcdfTests
+import SwiftNetCDFTests
 
 var tests = [XCTestCaseEntry]()
-tests += swift_netcdfTests.allTests()
+tests += SwiftNetCDFTests.allTests()
 XCTMain(tests)
