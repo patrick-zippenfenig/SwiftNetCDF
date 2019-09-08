@@ -7,6 +7,7 @@ final class SwiftNetCDFTests: XCTestCase {
         // Use XCTAssert and related functions to verify your tests produce the correct
         // results.
         XCTAssertEqual(SwiftNetCDF().text, "Hello, World!")
+        XCTAssertEqual(SwiftNetCDF().netCDFVersion, "4.6.1 of Apr 20 2018 10:09:42 $")
     }
 
     static var allTests = [
