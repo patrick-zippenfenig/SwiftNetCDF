@@ -10,7 +10,11 @@ let package = Package(
     ],
     dependencies: [],
     targets: [
-        .target(name: "CNetCDF", dependencies: []),
+        .systemLibrary(
+            name: "CNetCDF",
+            pkgConfig: "netcdf",
+            providers: [.brew(["netcdf"]), .apt(["libnetcdf-dev"])]
+        ),
         .target(name: "SwiftNetCDF", dependencies: ["CNetCDF"]),
         .testTarget(name: "SwiftNetCDFTests", dependencies: ["SwiftNetCDF"]),
     ]
