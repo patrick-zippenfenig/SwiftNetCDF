@@ -1,4 +1,4 @@
-import CNetcdf
+import CNetCDF
 
 struct SwiftNetCDF {
     var text = "Hello, World!"
