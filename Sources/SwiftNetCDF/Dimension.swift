@@ -62,13 +62,21 @@ public struct Group {
     public func createGroup() { }
 }
 
+
+// https://www.unidata.ucar.edu/software/netcdf/docs/group__datasets.html#gab61332b944afc91bfc3a0da104e29079
+public struct DataType {
+    let typeid: nc_type
+    let name: String
+    let size: Int
+}
+
 /// A netcdf variable of unspecified type
 public struct Variable {
     let group: Group
     let name: String
     let varid: Int32
     let dimensions: [Dimension]
-    let typeid: nc_type
+    let dataType: DataType
     
     var count: Int { return dimensions.reduce(1, {$0 * $1.length}) }
     
@@ -95,17 +103,17 @@ public struct Variable {
         fatalError()
     }
     
-    public init(name: String, typeid: nc_type, dimensions: [Dimension], group: Group) throws {
+    public init(name: String, dataType: DataType, dimensions: [Dimension], group: Group) throws {
         let dimensionIds = dimensions.map { $0.dimid }
         var varid: Int32 = 0
         try netcdfLock.nc_exec {
-            nc_def_var(group.ncid, name, typeid, Int32(dimensions.count), dimensionIds, &varid)
+            nc_def_var(group.ncid, name, dataType.typeid, Int32(dimensions.count), dimensionIds, &varid)
         }
         self.group = group
         self.name = name
         self.varid = varid
         self.dimensions = dimensions
-        self.typeid = typeid
+        self.dataType = dataType
     }
     
     /// enable compression for this netcdf variable. This should be set before any data is written
@@ -124,6 +132,21 @@ public struct Variable {
     /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
     public func asPrimitive<T: Primitive>(of: T.Type) -> VariablePrimitive<T>? {
         fatalError()
+    }
+    
+    /// Read raw by using the datatype size directly
+    public func readRaw(offset: [Int], count: [Int]) throws -> Data {
+        assert(dimensions.count == offset.count)
+        assert(dimensions.count == count.count)
+        let n_elements = count.reduce(1, *)
+        let n_bytes = n_elements * dataType.size
+        var data = Data(capacity: n_bytes)
+        try withUnsafeMutablePointer(to: &data) { ptr in
+            try netcdfLock.nc_exec {
+                nc_get_vara(group.ncid, varid, offset, count, ptr)
+            }
+        }
+        return data
     }
 }
 
