@@ -61,8 +61,14 @@ public struct Variable {
     }
     
     /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
-    public func asPrimitive<T: Primitive>(of: T.Type) -> VariablePrimitive<T>? {
-        fatalError()
+    public func asType<T: Primitive>(_ of: T.Type) -> VariablePrimitive<T>? {
+        guard case let DataType.primitive(primitive) = dataType else {
+            return nil
+        }
+        guard T.netCdfAtomic == primitive else {
+            return nil
+        }
+        return VariablePrimitive(variable: self)
     }
     
     /// Read raw by using the datatype size directly
@@ -95,6 +101,13 @@ public struct VariablePrimitive<T: Primitive> {
             T.nc_get_vara(variable.group.ncid, variable.varid, start: offset, count: count, data: &array)
         }
         return array
+    }
+    
+    /// Read the whole variable
+    public func read() throws -> [T] {
+        let offset = [Int](repeating: 0, count: variable.dimensions.count)
+        let count = variable.dimensions.map { $0.length }
+        return try read(offset: offset, count: count)
     }
     
     /// Write a complete array to the file. The array must be as large as the defined dimensions

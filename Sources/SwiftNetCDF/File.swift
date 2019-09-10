@@ -8,12 +8,14 @@
 import Foundation
 
 public final class File {
-    static func create(file: String, overwriteExisting: Bool, useNetCDF4: Bool) throws -> Group {
-        fatalError()
+    static func create(file: String, overwriteExisting: Bool, useNetCDF4: Bool = true) throws -> Group {
+        let ncid = try netcdfLock.create(path: file, overwriteExisting: overwriteExisting, useNetCDF4: useNetCDF4)
+        return try Group(ncid: ncid, parent: nil)
     }
     
     static func open(file: String, allowWrite: Bool) throws -> Group {
-        fatalError()
+        let ncid = try netcdfLock.open(path: file, allowWrite: allowWrite   )
+        return try Group(ncid: ncid, parent: nil)
     }
 }
 
@@ -65,9 +67,10 @@ public final class Group {
         return try Variable(name: name, dataType: dataType, dimensions: dimensions, group: self)
     }
     
-    public func createVariable<T: Primitive>(name: String, type: T.Type, dimensions: [Dimension]) -> VariablePrimitive<T> {
-        // compression?
-        fatalError()
+    public func createVariable<T: Primitive>(name: String, type: T.Type, dimensions: [Dimension]) throws -> VariablePrimitive<T> {
+        
+        let vari = try createVariable(name: name, dataType: DataType.primitive(T.netCdfAtomic), dimensions: dimensions)
+        return VariablePrimitive(variable: vari)
     }
     
     /// Try to open an exsisting subgroup. Nil if it does not exist
@@ -96,6 +99,11 @@ public final class Group {
      */
     public func createDimension(name: String, length: Int, isUnlimited: Bool = false) throws -> Dimension {
         return try Dimension(group: self, name: name, length: length, isUnlimited: isUnlimited)
+    }
+    
+    public func sync() {
+        // Throws only an exception if ncid is invalid
+        try! netcdfLock.sync(ncid: ncid)
     }
 }
 

@@ -24,7 +24,7 @@ enum NetCDFError: Error {
         case NC_EBADNAME: self = .badName
         case NC_ENOTATT: self = .attributeNotFound
         default:
-            let error = String(describing: nc_strerror(ncerr))
+            let error = String(cString: nc_strerror(ncerr))
             self = .ncerror(code: ncerr, error: error)
         }
     }
@@ -72,6 +72,55 @@ extension Lock {
             nc_inq_grps(ncid, nil, &ids)
         }
         return ids
+    }
+    
+    func open(path: String, omode: Int32) throws -> Int32 {
+        var ncid: Int32 = 0
+        try nc_exec {
+            nc_open(path, omode, &ncid)
+        }
+        return ncid
+    }
+    
+    func open(path: String, allowWrite: Bool) throws -> Int32 {
+        return try open(path: path, omode: allowWrite ? NC_WRITE : 0)
+    }
+    
+    func create(path: String, cmode: Int32) throws -> Int32 {
+        var ncid: Int32 = 0
+        try nc_exec {
+            nc_create(path, cmode, &ncid)
+        }
+        return ncid
+    }
+    
+    func create(path: String, overwriteExisting: Bool, useNetCDF4: Bool) throws -> Int32 {
+        var cmode = Int32(0)
+        if overwriteExisting == false {
+            cmode |= NC_NOCLOBBER
+        }
+        if useNetCDF4 {
+            cmode |= NC_NETCDF4
+        }
+        return try create(path: path, cmode: cmode)
+    }
+    
+    func sync(ncid: Int32) throws {
+        try nc_exec {
+            nc_sync(ncid)
+        }
+    }
+    
+    func inq_user_type(ncid: Int32, typeid: Int32) throws -> (name: String, size: Int, baseTypeId: Int32, numberOfFields: Int, classType: Int32) {
+        
+        var size = 0
+        var baseTypeId: Int32 = 0
+        var numberOfFields = 0
+        var classType: Int32 = 0
+        let name = try nc_max_name {
+            nc_inq_user_type(ncid, typeid, $0, &size, &baseTypeId, &numberOfFields, &classType)
+        }
+        return (name, size, baseTypeId, numberOfFields, classType)
     }
     
     /// Get all variable IDs of a group id

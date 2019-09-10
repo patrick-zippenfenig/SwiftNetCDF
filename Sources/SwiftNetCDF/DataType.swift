@@ -16,13 +16,24 @@ public enum DataType {
     case primitive(PrimitiveType)
     case userDefined(UserDefinedType)
     
-    var typeid: nc_type { fatalError() }
+    var typeid: nc_type {
+        switch self {
+        case .primitive(let type): return type.rawValue
+        case .userDefined(let userDefined): return userDefined.typeid
+        }
+    }
     var byteSize: Int { fatalError() }
     
     init(fromTypeId typeid: nc_type, group: Group) throws {
+        if let primitve = PrimitiveType(rawValue: typeid) {
+            self = DataType.primitive(primitve)
+            return
+        }
+        
+        let typeInq = try netcdfLock.inq_user_type(ncid: group.ncid, typeid: typeid)
+        // TODO switch user types
         fatalError()
-        // https://www.unidata.ucar.edu/software/netcdf/docs/group__user__types.html#gaf4340ce9486b1b38e853d75ed23303da
-        // nc_inq_user_type return the user type
+        
     }
 }
 
@@ -31,6 +42,9 @@ public enum UserDefinedType {
     case compound(Compound)
     case opaque(Opaque)
     case variableLength(VariableLength)
+    
+    var typeid: nc_type { fatalError() }
+    var byteSize: Int { fatalError() }
 }
 
 public struct Compound {
