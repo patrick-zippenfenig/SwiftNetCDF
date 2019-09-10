@@ -26,6 +26,21 @@ public enum PrimitiveType: Int32 {
 }
 
 
+
+public protocol PrimitiveDataType {
+    static var netcdfType: PrimitiveType { get }
+    static var emptyValue: Self { get }
+}
+
+extension Float: PrimitiveDataType {
+    public static var emptyValue: Float { return Float.nan }
+    public static var netcdfType: PrimitiveType { return .float }
+}
+
+extension String {
+    public static var netcdfType: PrimitiveType { return .string }
+}
+
 public protocol Primitive: Equatable {
     static var netCdfAtomic: PrimitiveType { get }
     static var netCdfNaNValue: Self { get }

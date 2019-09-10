@@ -209,11 +209,9 @@ extension Lock {
         return (typeid, len)
     }
     
-    func put_att(ncid: Int32, varid: Int32, name: String, type: Int32, data: Data) throws {
-        try withUnsafePointer(to: data) { ptr in
-            try netcdfLock.nc_exec {
-                nc_put_att(ncid, varid, name, type, data.count, ptr)
-            }
+    func put_att(ncid: Int32, varid: Int32, name: String, type: Int32, length: Int, ptr: UnsafeRawPointer) throws {
+        try netcdfLock.nc_exec {
+            nc_put_att(ncid, varid, name, type, length, ptr)
         }
     }
     
@@ -225,11 +223,9 @@ extension Lock {
         return len
     }
     
-    func get_att(ncid: Int32, varid: Int32, name: String, size: Int) throws -> Data {
-        var buffer = Data(capacity: size)
+    func get_att(ncid: Int32, varid: Int32, name: String, buffer: UnsafeMutableRawPointer) throws {
         try nc_exec {
-            nc_get_att(ncid, varid, name, &buffer)
+            nc_get_att(ncid, varid, name, buffer)
         }
-        return buffer
     }
 }
