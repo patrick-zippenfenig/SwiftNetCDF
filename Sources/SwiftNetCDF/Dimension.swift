@@ -32,8 +32,26 @@ public final class File {
 public struct Dimension {
     let dimid: Int32
     let name: String
+    
+    /// length my be updated for unlimited dimensions
     let length: Int
-    // is unlimited?
+    
+    let isUnlimited: Bool
+    
+    /**
+     Initialise from existing dimension ID. isUlimited must be supplied, because it can not be self discovered.
+     */
+    init(fromDimId dimid: Int32, isUnlimited: Bool, group: Group) throws {
+        var len: Int = 0
+        var nameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
+        try netcdfLock.nc_exec {
+            nc_inq_dim(group.ncid, dimid, &nameBuffer, &len)
+        }
+        self.dimid = dimid
+        self.name = String(cString: nameBuffer)
+        self.length = len
+        self.isUnlimited = isUnlimited
+    }
 }
 
 public struct Group {
@@ -49,7 +67,8 @@ public struct Group {
         if ncerr != NC_NOERR {
             return nil
         }
-        return Variable.init(fromVarId: varid, ncid: ncid, file: file)
+        fatalError()
+        //return Variable.init(fromVarId: varid, ncid: ncid, file: file)
     }
     
     public func createVariable<T: Primitive>(name: String, type: T.Type, dimensions: [Dimension]) -> VariablePrimitive<T> {
@@ -60,14 +79,82 @@ public struct Group {
     public func getGroup() { }
     
     public func createGroup() { }
+    
+    /**
+     Get a list of IDs of unlimited dimensions.
+     In netCDF-4 files, it's possible to have multiple unlimited dimensions. This function returns a list of the unlimited dimension ids visible in a group.
+     Dimensions are visible in a group if they have been defined in that group, or any ancestor group.
+     */
+    public func getUnlimitedDimensionIds() throws -> [Int32] {
+        // Get the number of dimesions
+        var nUnlimited: Int32 = 0
+        try netcdfLock.nc_exec {
+            nc_inq_unlimdims(ncid, &nUnlimited, nil)
+        }
+        // Allocate array and get the IDs
+        var unlimitedDimensions = [Int32](repeating: 0, count: Int(nUnlimited))
+        try netcdfLock.nc_exec {
+            nc_inq_unlimdims(ncid, nil, &unlimitedDimensions)
+        }
+        return unlimitedDimensions
+    }
 }
 
 
-// https://www.unidata.ucar.edu/software/netcdf/docs/group__datasets.html#gab61332b944afc91bfc3a0da104e29079
-public struct DataType {
+public enum DataClass: Int32 {
+    case nc_vlen = 9999 // NC_VLEN
+}
+
+public enum DataType {
+    case primitive(PrimitiveType)
+    case userDefined(UserDefinedType)
+    
+    var typeid: nc_type { fatalError() }
+    var size: Int { fatalError() }
+    
+    init(fromTypeId typeid: nc_type, group: Group) {
+        fatalError()
+        // https://www.unidata.ucar.edu/software/netcdf/docs/group__user__types.html#gaf4340ce9486b1b38e853d75ed23303da
+        // nc_inq_user_type return the user type
+    }
+}
+
+public enum UserDefinedType {
+    case enumeration(Enumeration)
+    case compound(Compound)
+    case opaque(Opaque)
+    case variableLength(VariableLength)
+}
+
+public struct Compound {
+    let group: Group
     let typeid: nc_type
     let name: String
     let size: Int
+    let numerOfFields: Int
+}
+
+public struct Opaque {
+    let group: Group
+    let typeid: nc_type
+    let name: String
+    let size: Int
+}
+
+public struct Enumeration {
+    let group: Group
+    let typeid: nc_type
+    let name: String
+    let size: Int
+    let numerOfFields: Int
+}
+
+public struct VariableLength {
+    let group: Group
+    let typeid: nc_type
+    let name: String
+    let size: Int
+    let baseTypeId: nc_type
 }
 
 /// A netcdf variable of unspecified type
@@ -80,27 +167,31 @@ public struct Variable {
     
     var count: Int { return dimensions.reduce(1, {$0 * $1.length}) }
     
-    public init(fromVarId: Int32, ncid: Int32, file: File) {
-        /*var dimids: [Int32] = [0,0,0,0,0,0,0,0]
-         var nattribudes: Int32 = 0
-         var typeid: Int32 = 0
-         var ndims: Int32 = 0
-         var nameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
-         netcdfLock.nc_exec {
-         nc_inq_var(ncfile.ncid, varid, &nameBuffer, &typeid, &ndims, &dimids, &nattribudes)
-         }
-         name = String(cString: nameBuffer)
-         
-         self.nattribudes = nattribudes
-         self.ndimensions = ndims
-         self.type = AtomicType(rawValue: typeid)!
-         self.dimensions = dimids[0...Int(ndims)-1].map { dimid in
-         var len: Int = 0
-         netcdfLock.nc_exec { nc_inq_dim(ncfile.ncid, dimid, nil, &len) }
-         return len
-         }*/
+    /**
+     Initialise from an existing variable id
+     */
+    public init(fromVarId varid: Int32, group: Group) throws {
+        var nDimensions: Int32 = 0
+        try netcdfLock.nc_exec {
+            nc_inq_varndims(group.ncid, varid, &nDimensions)
+        }
+        var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
+        var nAttribudes: Int32 = 0
+        var typeid: Int32 = 0
+        var nameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
+        try netcdfLock.nc_exec {
+            nc_inq_var(group.ncid, varid, &nameBuffer, &typeid, nil, &dimensionIds, &nAttribudes)
+        }
         
-        fatalError()
+        let unlimitedDimensions = try group.getUnlimitedDimensionIds()
+        
+        self.group = group
+        self.varid = varid
+        self.name = String(cString: nameBuffer)
+        self.dimensions = try dimensionIds.map {
+            try Dimension(fromDimId: $0, isUnlimited: unlimitedDimensions.contains($0), group: group)
+        }
+        self.dataType = DataType(fromTypeId: typeid, group: group)
     }
     
     public init(name: String, dataType: DataType, dimensions: [Dimension], group: Group) throws {

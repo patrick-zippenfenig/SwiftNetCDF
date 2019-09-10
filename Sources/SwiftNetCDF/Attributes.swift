@@ -14,6 +14,11 @@ protocol AttributeProvider {
     
 }
 
+public struct Attribute {
+    let name: String
+    let type: DataType
+}
+
 extension AttributeProvider {
     // TODO list functions
     
