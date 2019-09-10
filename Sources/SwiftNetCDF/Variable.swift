@@ -22,39 +22,24 @@ public struct Variable {
     /**
      Initialise from an existing variable id
      */
-    public init(fromVarId varid: Int32, group: Group) throws {
-        var nDimensions: Int32 = 0
-        try netcdfLock.nc_exec {
-            nc_inq_varndims(group.ncid, varid, &nDimensions)
-        }
-        var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
-        var nAttribudes: Int32 = 0
-        var typeid: Int32 = 0
-        var nameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
-        try netcdfLock.nc_exec {
-            nc_inq_var(group.ncid, varid, &nameBuffer, &typeid, nil, &dimensionIds, &nAttribudes)
-        }
-        
-        let unlimitedDimensions = try group.getUnlimitedDimensionIds()
-        
+    init(fromVarId varid: Int32, group: Group) throws {
+        let varinq = try netcdfLock.inq_var(ncid: group.ncid, varid: varid)
+        let unlimitedDimensions = try netcdfLock.inq_unlimdims(ncid: group.ncid)
         self.group = group
         self.varid = varid
-        self.name = String(cString: nameBuffer)
-        self.dimensions = try dimensionIds.map {
+        self.name = varinq.name
+        self.dimensions = try varinq.dimensionIds.map {
             try Dimension(fromDimId: $0, isUnlimited: unlimitedDimensions.contains($0), group: group)
         }
-        self.dataType = DataType(fromTypeId: typeid, group: group)
+        self.dataType = DataType(fromTypeId: varinq.typeid, group: group)
     }
     
     /**
      Define a new variable in the NetCDF file
      */
-    public init(name: String, dataType: DataType, dimensions: [Dimension], group: Group) throws {
+    init(name: String, dataType: DataType, dimensions: [Dimension], group: Group) throws {
         let dimensionIds = dimensions.map { $0.dimid }
-        var varid: Int32 = 0
-        try netcdfLock.nc_exec {
-            nc_def_var(group.ncid, name, dataType.typeid, Int32(dimensions.count), dimensionIds, &varid)
-        }
+        let varid = try netcdfLock.def_var(ncid: group.ncid, name: name, typeid: dataType.typeid, dimensionIds: dimensionIds)
         self.group = group
         self.name = name
         self.varid = varid

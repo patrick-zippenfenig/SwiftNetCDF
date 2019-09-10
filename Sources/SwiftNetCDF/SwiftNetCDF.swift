@@ -7,6 +7,18 @@ struct SwiftNetCDF {
 
 enum NetCDFError: Error {
     case ncerror(code: Int32, error: String)
+    case invalidVariable
+    case badNcid
+    
+    init(ncerr: Int32) {
+        switch ncerr {
+        case NC_ENOTVAR: self = .invalidVariable
+        case NC_EBADID: self = .badNcid
+        default:
+            let error = String(describing: nc_strerror(ncerr))
+            self = .ncerror(code: ncerr, error: error)
+        }
+    }
 }
 
 /**
@@ -23,8 +35,126 @@ extension Lock {
     func nc_exec(_ fn: () -> Int32) throws {
         let ncerr = withLock(fn)
         guard ncerr == NC_NOERR else {
-            let error = String(describing: nc_strerror(ncerr))
-            throw NetCDFError.ncerror(code: ncerr, error: error)
+            throw NetCDFError(ncerr: ncerr)
         }
+    }
+    
+    /// Get all group IDs of a group id
+    func inq_grps(ncid: Int32) throws -> [Int32] {
+        var count: Int32 = 0
+        try nc_exec {
+            nc_inq_grps(ncid, &count, nil)
+        }
+        var ids = [Int32](repeating: 0, count: Int(count))
+        try nc_exec {
+            nc_inq_grps(ncid, nil, &ids)
+        }
+        return ids
+    }
+    
+    /// Get all variable IDs of a group id
+    func inq_varids(ncid: Int32) throws -> [Int32] {
+        var count: Int32 = 0
+        try nc_exec {
+            nc_inq_varids(ncid, &count, nil)
+        }
+        var ids = [Int32](repeating: 0, count: Int(count))
+        try nc_exec {
+            nc_inq_varids(ncid, nil, &ids)
+        }
+        return ids
+    }
+    
+    /// Get the name of a group
+    func inq_grpname(ncid: Int32) throws -> String {
+        var nameLength = 0
+        try netcdfLock.nc_exec {
+            nc_inq_grpname_len(ncid, &nameLength)
+        }
+        var nameBuffer = [Int8](repeating: 0, count: nameLength) // CHECK +1 needed?
+        try netcdfLock.nc_exec {
+            nc_inq_grpname(ncid, &nameBuffer)
+        }
+        return String(cString: nameBuffer)
+    }
+    
+    /// Define a new group
+    func def_grp(ncid: Int32, name: String) throws -> Int32 {
+        var newNcid: Int32 = 0
+        try netcdfLock.nc_exec {
+            nc_def_grp(ncid, name, &newNcid)
+        }
+        return newNcid
+    }
+    
+    /// Get a variable by name
+    func inq_varid(ncid: Int32, name: String) throws -> Int32 {
+        var id: Int32 = 0
+        try netcdfLock.nc_exec { nc_inq_varid(ncid, name, &id) }
+        return id
+    }
+    
+    /// Get a group by name
+    func inq_grp_ncid(ncid: Int32, name: String) throws -> Int32 {
+        var id: Int32 = 0
+        try netcdfLock.nc_exec { nc_inq_grp_ncid(ncid, name, &id) }
+        return id
+    }
+    
+    /// Close the netcdf file
+    func close(ncid: Int32) throws {
+        try netcdfLock.nc_exec {
+            nc_close(ncid)
+        }
+    }
+    
+    /**
+     Get a list of IDs of unlimited dimensions.
+     In netCDF-4 files, it's possible to have multiple unlimited dimensions. This function returns a list of the unlimited dimension ids visible in a group.
+     Dimensions are visible in a group if they have been defined in that group, or any ancestor group.
+     */
+    func inq_unlimdims(ncid: Int32) throws -> [Int32] {
+        // Get the number of dimensions
+        var count: Int32 = 0
+        try nc_exec {
+            nc_inq_unlimdims(ncid, &count, nil)
+        }
+        // Allocate array and get the IDs
+        var dimensions = [Int32](repeating: 0, count: Int(count))
+        try nc_exec {
+            nc_inq_unlimdims(ncid, nil, &dimensions)
+        }
+        return dimensions
+    }
+    
+    /// Get all variable IDs of a group id
+    func inq_varndims(ncid: Int32, varid: Int32) throws -> Int32 {
+        var count: Int32 = 0
+        try nc_exec {
+            nc_inq_varndims(ncid, varid, &count)
+        }
+        return count
+    }
+    
+    
+    func inq_var(ncid: Int32, varid: Int32) throws -> (name: String, typeid: Int32, dimensionIds: [Int32], nAttributes: Int32) {
+        let nDimensions = try inq_varndims(ncid: ncid, varid: varid)
+        var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
+        var nAttribudes: Int32 = 0
+        var typeid: Int32 = 0
+        var nameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
+        try nc_exec {
+            nc_inq_var(ncid, varid, &nameBuffer, &typeid, nil, &dimensionIds, &nAttribudes)
+        }
+        let name = String(cString: nameBuffer)
+        return (name, typeid, dimensionIds, nAttribudes)
+    }
+    
+    func def_var(ncid: Int32, name: String, typeid: Int32, dimensionIds: [Int32]) throws -> Int32 {
+        var varid: Int32 = 0
+        try nc_exec {
+            nc_def_var(ncid, name, typeid, Int32(dimensionIds.count), dimensionIds, &varid)
+        }
+        return varid
     }
 }

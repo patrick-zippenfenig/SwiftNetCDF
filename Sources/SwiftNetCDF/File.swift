@@ -6,39 +6,63 @@
 //
 
 import Foundation
-import CNetCDF
 
 public final class File {
-    let ncid: Int32 = 0
-    
-    static func create(file: String, overwriteExisting: Bool, useNetCDF4: Bool) throws -> File {
+    static func create(file: String, overwriteExisting: Bool, useNetCDF4: Bool) throws -> Group {
         fatalError()
     }
     
-    static func open(file: String, allowWrite: Bool) throws -> File {
-        fatalError()
-    }
-    
-    func getRootGroup() -> Group {
+    static func open(file: String, allowWrite: Bool) throws -> Group {
         fatalError()
     }
 }
 
-public struct Group {
-    let file: File
+public final class Group {
+    let parent: Group?
     /// id of the group
     let ncid: Int32
+    let name: String
     
-    // list groups / variables
+    /// Existing group from ID.
+    init(ncid: Int32, parent: Group?) throws {
+        self.parent = parent
+        self.ncid = ncid
+        self.name = try netcdfLock.inq_grpname(ncid: ncid)
+    }
     
-    public func getVariable(byName name: String) -> Variable? {
-        var varid: Int32 = 0
-        let ncerr = netcdfLock.withLock { nc_inq_varid(ncid, name, &varid) }
-        if ncerr != NC_NOERR {
+    /// Create a new group
+    init(name: String, parent: Group) throws {
+        self.ncid = try netcdfLock.def_grp(ncid: parent.ncid, name: name)
+        self.parent = parent
+        self.name = name
+    }
+    
+    /// Close the netcdf file if this is the last group
+    deinit {
+        if parent == nil {
+            try? netcdfLock.close(ncid: ncid)
+        }
+    }
+    
+    /// Try to open an exsiting variable. Nil if it does not exist
+    public func getVariable(byName name: String) throws -> Variable? {
+        do {
+            let varid = try netcdfLock.inq_varid(ncid: ncid, name: name)
+            return try Variable(fromVarId: varid, group: self)
+        } catch (NetCDFError.invalidVariable) {
             return nil
         }
-        fatalError()
-        //return Variable.init(fromVarId: varid, ncid: ncid, file: file)
+    }
+    
+    /// Get all varibales in the group
+    public func getVariables() throws -> [Variable] {
+        let ids = try netcdfLock.inq_varids(ncid: ncid)
+        return try ids.map { try Variable(fromVarId: $0, group: self) }
+    }
+    
+    /// Define a new variable in the netcdf file
+    public func createVariable(name: String, dataType: DataType, dimensions: [Dimension]) throws -> Variable {
+        return try Variable(name: name, dataType: dataType, dimensions: dimensions, group: self)
     }
     
     public func createVariable<T: Primitive>(name: String, type: T.Type, dimensions: [Dimension]) -> VariablePrimitive<T> {
@@ -46,34 +70,32 @@ public struct Group {
         fatalError()
     }
     
-    public func getGroup() { }
+    /// Try to open an exsisting subgroup. Nil if it does not exist
+    public func getGroup(byName name: String) throws -> Group? {
+        do {
+            let groupId = try netcdfLock.inq_grp_ncid(ncid: ncid, name: name)
+            return try Group(ncid: groupId, parent: self)
+        } catch (NetCDFError.badNcid) { // TODO check which error is used
+            return nil
+        }
+    }
     
-    public func createGroup() { }
+    /// Define a new group in the netcdf file
+    public func createGroup(name: String) throws -> Group {
+        return try Group(name: name, parent: self)
+    }
+    
+    /// Get all subgroups
+    public func getGroups() throws -> [Group] {
+        let ids = try netcdfLock.inq_grps(ncid: ncid)
+        return try ids.map { try Group(ncid: $0, parent: self) }
+    }
     
     /**
      Define a new dimension in this group
      */
     public func createDimension(name: String, length: Int, isUnlimited: Bool = false) throws -> Dimension {
         return try Dimension(group: self, name: name, length: length, isUnlimited: isUnlimited)
-    }
-    
-    /**
-     Get a list of IDs of unlimited dimensions.
-     In netCDF-4 files, it's possible to have multiple unlimited dimensions. This function returns a list of the unlimited dimension ids visible in a group.
-     Dimensions are visible in a group if they have been defined in that group, or any ancestor group.
-     */
-    public func getUnlimitedDimensionIds() throws -> [Int32] {
-        // Get the number of dimesions
-        var nUnlimited: Int32 = 0
-        try netcdfLock.nc_exec {
-            nc_inq_unlimdims(ncid, &nUnlimited, nil)
-        }
-        // Allocate array and get the IDs
-        var unlimitedDimensions = [Int32](repeating: 0, count: Int(nUnlimited))
-        try netcdfLock.nc_exec {
-            nc_inq_unlimdims(ncid, nil, &unlimitedDimensions)
-        }
-        return unlimitedDimensions
     }
 }
 
