@@ -46,6 +46,33 @@ public final class Group {
         }
     }
     
+    /// Return the (CDL Common Data Language) representation
+    func getCdl(headerOnly: Bool = true, indent: Int = 0) throws -> String {
+        var out = ""
+        let ind = String(repeating: " ", count: indent)
+        let dimensions = try getDimensions()
+        out += "\(ind)group: \(name) {\n"
+        out += "\(ind)  dimensions:\n"
+        dimensions.forEach {
+            out += "\(ind)        \($0.getCdl())\n"
+        }
+        
+        let variables = try getVariables()
+        out += "\(ind)  variables:\n"
+        variables.forEach {
+            out += $0.getCdl(indent: indent+8)
+        }
+        out += "\(ind)  } // group \(name)"
+        return out
+    }
+    
+    /// Return all dimensions registered in this group
+    public func getDimensions() throws -> [Dimension] {
+        let ids = try netcdfLock.inq_dimids(ncid: ncid, includeParents: false)
+        let unlimited = try netcdfLock.inq_unlimdims(ncid: ncid)
+        return try ids.map { try Dimension(fromDimId: $0, isUnlimited: unlimited.contains($0), group: self) }
+    }
+    
     /// Try to open an exsiting variable. Nil if it does not exist
     public func getVariable(byName name: String) throws -> Variable? {
         do {

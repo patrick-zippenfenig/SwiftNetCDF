@@ -7,6 +7,8 @@ final class SwiftNetCDFTests: XCTestCase {
      Afterwards read the data again and check if it is the same.
      */
     func testCreateSimple() throws {
+        let data = (Int32(0)..<50).map{$0}
+        
         let file = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
         
         let dims = [
@@ -15,17 +17,28 @@ final class SwiftNetCDFTests: XCTestCase {
         ]
         
         let vari = try file.createVariable(name: "MyData", type: Int32.self, dimensions: dims)
-        
-        let data = (Int32(0)..<50).map{$0}
         try vari.write(data)
         file.sync()
+        
         
         // Open the same file again and read the data
         let file2 = try File.open(file: "test.nc", allowWrite: false)
         let vari2 = try file2.getVariable(byName: "MyData")!.asType(Int32.self)!
-        
         let data2 = try vari2.read()
         XCTAssertEqual(data, data2)
+        
+        
+        // Compare the CDL notation of this file
+        let cdl = """
+group: / {
+  dimensions:
+        LAT = 10 ;
+        LON = 5 ;
+  variables:
+        int32 MyData(LAT, LON) ;
+  } // group /
+"""
+        XCTAssertEqual(cdl, try file2.getCdl())
     }
     
     func testExample() {

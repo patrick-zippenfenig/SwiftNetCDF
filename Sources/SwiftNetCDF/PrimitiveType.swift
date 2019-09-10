@@ -23,6 +23,10 @@ public enum PrimitiveType: Int32 {
     case uint32 = 9
     case int64 = 10
     case string = 12
+    
+    var name: String {
+        return "\(self)"
+    }
 }
 
 

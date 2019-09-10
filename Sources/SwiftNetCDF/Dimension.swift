@@ -43,6 +43,13 @@ public struct Dimension {
         self.isUnlimited = isUnlimited
     }
     
+    public func getCdl() -> String {
+        if isUnlimited {
+            return "\(name) UNLIMITED ; // \(length) currently"
+        }
+        return "\(name) = \(length) ;"
+    }
+    
     /*public enum LengthOrUnlimited {
         case length(Int)
         case unlimited

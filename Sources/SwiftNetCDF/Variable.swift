@@ -85,6 +85,12 @@ public struct Variable {
         }
         return data
     }
+    
+    public func getCdl(indent: Int) -> String {
+        let ind = String(repeating: " ", count: indent)
+        let dims = dimensions.map { $0.name }.joined(separator: ", ")
+        return "\(ind)\(dataType.name) \(name)(\(dims)) ;\n"
+    }
 }
 
 

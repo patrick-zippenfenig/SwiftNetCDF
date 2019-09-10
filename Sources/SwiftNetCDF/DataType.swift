@@ -22,6 +22,12 @@ public enum DataType {
         case .userDefined(let userDefined): return userDefined.typeid
         }
     }
+    var name: String {
+        switch self {
+        case .primitive(let type): return type.name
+        case .userDefined(let userDefined): return userDefined.name
+        }
+    }
     var byteSize: Int { fatalError() }
     
     init(fromTypeId typeid: nc_type, group: Group) throws {
@@ -45,6 +51,7 @@ public enum UserDefinedType {
     
     var typeid: nc_type { fatalError() }
     var byteSize: Int { fatalError() }
+    var name: String { fatalError() }
 }
 
 public struct Compound {

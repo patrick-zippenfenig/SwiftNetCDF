@@ -111,6 +111,14 @@ extension Lock {
         }
     }
     
+    func inq_type(ncid: Int32, typeid: Int32) throws -> (name: String, size: Int) {
+        var size = 0
+        let name = try nc_max_name {
+            nc_inq_type(ncid, typeid, $0, &size)
+        }
+        return (name, size)
+    }
+    
     func inq_user_type(ncid: Int32, typeid: Int32) throws -> (name: String, size: Int, baseTypeId: Int32, numberOfFields: Int, classType: Int32) {
         
         var size = 0
@@ -205,6 +213,20 @@ extension Lock {
             nc_inq_varndims(ncid, varid, &count)
         }
         return count
+    }
+    
+    func inq_dimids(ncid: Int32, includeParents: Bool) throws -> [Int32] {
+        // Get the number of dimensions
+        var count: Int32 = 0
+        try nc_exec {
+            nc_inq_dimids(ncid, &count, nil, includeParents ? 1 : 0)
+        }
+        // Allocate array and get the IDs
+        var ids = [Int32](repeating: 0, count: Int(count))
+        try nc_exec {
+            nc_inq_dimids(ncid, nil, &ids, includeParents ? 1 : 0)
+        }
+        return ids
     }
     
     
