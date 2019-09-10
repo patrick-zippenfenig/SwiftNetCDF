@@ -31,7 +31,7 @@ public struct Variable {
         self.dimensions = try varinq.dimensionIds.map {
             try Dimension(fromDimId: $0, isUnlimited: unlimitedDimensions.contains($0), group: group)
         }
-        self.dataType = DataType(fromTypeId: varinq.typeid, group: group)
+        self.dataType = try DataType(fromTypeId: varinq.typeid, group: group)
     }
     
     /**
@@ -70,7 +70,7 @@ public struct Variable {
         assert(dimensions.count == offset.count)
         assert(dimensions.count == count.count)
         let n_elements = count.reduce(1, *)
-        let n_bytes = n_elements * dataType.size
+        let n_bytes = n_elements * dataType.byteSize
         var data = Data(capacity: n_bytes)
         try withUnsafeMutablePointer(to: &data) { ptr in
             try netcdfLock.nc_exec {

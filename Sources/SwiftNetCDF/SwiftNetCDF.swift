@@ -1,4 +1,5 @@
 import CNetCDF
+import Foundation
 
 struct SwiftNetCDF {
     var text = "Hello, World!"
@@ -197,5 +198,38 @@ extension Lock {
         return try nc_max_name {
             nc_inq_attname(ncid, varid, attid, $0)
         }
+    }
+    
+    func inq_att(ncid: Int32, varid: Int32, name: String) throws -> (typeid: Int32, length: Int) {
+        var typeid: Int32 = 0
+        var len: Int = 0
+        try nc_exec {
+            nc_inq_att(ncid, varid, name, &typeid, &len)
+        }
+        return (typeid, len)
+    }
+    
+    func put_att(ncid: Int32, varid: Int32, name: String, type: Int32, data: Data) throws {
+        try withUnsafePointer(to: data) { ptr in
+            try netcdfLock.nc_exec {
+                nc_put_att(ncid, varid, name, type, data.count, ptr)
+            }
+        }
+    }
+    
+    func inq_attlen(ncid: Int32, varid: Int32, name: String) throws -> Int {
+        var len: Int = 0
+        try nc_exec {
+            nc_inq_attlen(ncid, varid, name, &len)
+        }
+        return len
+    }
+    
+    func get_att(ncid: Int32, varid: Int32, name: String, size: Int) throws -> Data {
+        var buffer = Data(capacity: size)
+        try nc_exec {
+            nc_get_att(ncid, varid, name, &buffer)
+        }
+        return buffer
     }
 }

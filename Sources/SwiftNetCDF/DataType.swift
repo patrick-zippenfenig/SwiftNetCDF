@@ -17,9 +17,9 @@ public enum DataType {
     case userDefined(UserDefinedType)
     
     var typeid: nc_type { fatalError() }
-    var size: Int { fatalError() }
+    var byteSize: Int { fatalError() }
     
-    init(fromTypeId typeid: nc_type, group: Group) {
+    init(fromTypeId typeid: nc_type, group: Group) throws {
         fatalError()
         // https://www.unidata.ucar.edu/software/netcdf/docs/group__user__types.html#gaf4340ce9486b1b38e853d75ed23303da
         // nc_inq_user_type return the user type
