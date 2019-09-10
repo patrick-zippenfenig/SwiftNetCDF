@@ -6,9 +6,6 @@
 //
 
 import Foundation
-import CNetCDF
-
-
 
 /*public indirect enum FileOrGroup {
     case file(File)
@@ -28,14 +25,10 @@ public struct Dimension {
      Initialise from existing dimension ID. isUlimited must be supplied, because it can not be self discovered.
      */
     init(fromDimId dimid: Int32, isUnlimited: Bool, group: Group) throws {
-        var len: Int = 0
-        var nameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
-        try netcdfLock.nc_exec {
-            nc_inq_dim(group.ncid, dimid, &nameBuffer, &len)
-        }
+        let diminq = try netcdfLock.inq_dim(ncid: group.ncid, dimid: dimid)
         self.dimid = dimid
-        self.name = String(cString: nameBuffer)
-        self.length = len
+        self.name = diminq.name
+        self.length = diminq.length
         self.isUnlimited = isUnlimited
     }
     
@@ -44,11 +37,7 @@ public struct Dimension {
      TODO: Consider using a enum for length or unlimited
      */
     init(group: Group, name: String, length: Int, isUnlimited: Bool) throws {
-        var dimid: Int32 = 0
-        try netcdfLock.nc_exec {
-            nc_def_dim(group.ncid, name, isUnlimited ? NC_UNLIMITED : length, &dimid)
-        }
-        self.dimid = dimid
+        self.dimid = try netcdfLock.def_dim(ncid: group.ncid, name: name, length: isUnlimited ? netcdfLock.NC_UNLIMITED : length)
         self.name = name
         self.length = length
         self.isUnlimited = isUnlimited

@@ -23,10 +23,8 @@ extension AttributeProvider {
     // TODO list functions
     
     // get set attribute
-    public func getAttributeName(id: Int32) throws -> String? {
-        var ptr = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
-        try netcdfLock.nc_exec { nc_inq_attname(ncid, varid, id, &ptr) }
-        return String(cString: &ptr)
+    public func getAttributeName(attid: Int32) throws -> String? {
+        return try netcdfLock.inq_attname(ncid: ncid, varid: varid, attid: attid)
     }
     
     /**

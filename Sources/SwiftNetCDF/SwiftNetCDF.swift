@@ -9,11 +9,19 @@ enum NetCDFError: Error {
     case ncerror(code: Int32, error: String)
     case invalidVariable
     case badNcid
+    case badVarid
+    case badGroupid
+    case badName
+    case attributeNotFound
     
     init(ncerr: Int32) {
         switch ncerr {
         case NC_ENOTVAR: self = .invalidVariable
         case NC_EBADID: self = .badNcid
+        case NC_ENOTVAR: self = .badVarid
+        case NC_EBADGRPID: self = .badGroupid
+        case NC_EBADNAME: self = .badName
+        case NC_ENOTATT: self = .attributeNotFound
         default:
             let error = String(describing: nc_strerror(ncerr))
             self = .ncerror(code: ncerr, error: error)
@@ -28,6 +36,8 @@ enum NetCDFError: Error {
  */
 let netcdfLock = Lock()
 
+fileprivate var maxNameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
+
 extension Lock {
     /**
      Execute a netcdf command in a thread safe lock and check the error code. Call fatal error otherwise.
@@ -38,6 +48,17 @@ extension Lock {
             throw NetCDFError(ncerr: ncerr)
         }
     }
+    
+    /// Execute a closure which takes a buffer for a netcdf variable NC_MAX_NAME const string
+    func nc_max_name(_ fn: (UnsafeMutablePointer<Int8>) -> Int32) throws -> String {
+        let ncerr = withLock { fn(&maxNameBuffer) }
+        guard ncerr == NC_NOERR else {
+            throw NetCDFError(ncerr: ncerr)
+        }
+        return String(cString: &maxNameBuffer)
+    }
+    
+    var NC_UNLIMITED: Int { return CNetCDF.NC_UNLIMITED }
     
     /// Get all group IDs of a group id
     func inq_grps(ncid: Int32) throws -> [Int32] {
@@ -142,11 +163,9 @@ extension Lock {
         var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
         var nAttribudes: Int32 = 0
         var typeid: Int32 = 0
-        var nameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
-        try nc_exec {
-            nc_inq_var(ncid, varid, &nameBuffer, &typeid, nil, &dimensionIds, &nAttribudes)
+        let name = try nc_max_name {
+            nc_inq_var(ncid, varid, $0, &typeid, nil, &dimensionIds, &nAttribudes)
         }
-        let name = String(cString: nameBuffer)
         return (name, typeid, dimensionIds, nAttribudes)
     }
     
@@ -156,5 +175,27 @@ extension Lock {
             nc_def_var(ncid, name, typeid, Int32(dimensionIds.count), dimensionIds, &varid)
         }
         return varid
+    }
+    
+    func inq_dim(ncid: Int32, dimid: Int32) throws -> (name: String, length: Int) {
+        var len: Int = 0
+        let name = try nc_max_name {
+            nc_inq_dim(ncid, dimid, $0, &len)
+        }
+        return (name, len)
+    }
+    
+    func def_dim(ncid: Int32, name: String, length: Int) throws -> Int32 {
+        var dimid: Int32 = 0
+        try netcdfLock.nc_exec {
+            nc_def_dim(ncid, name, length, &dimid)
+        }
+        return dimid
+    }
+    
+    func inq_attname(ncid: Int32, varid: Int32, attid: Int32) throws -> String {
+        return try nc_max_name {
+            nc_inq_attname(ncid, varid, attid, $0)
+        }
     }
 }
