@@ -27,7 +27,9 @@ extension AttributeProvider {
     }
     
     public func setAttribute(_ name: String, _ value: String) throws {
-        try netcdfLock.put_att(ncid: group.ncid, varid: varid, name: name, type: String.netcdfType.rawValue, length: value.count, ptr: value)
+        try value.withCString {
+            try netcdfLock.put_att(ncid: group.ncid, varid: varid, name: name, type: String.netcdfType.rawValue, length: 1, ptr: [$0])
+        }
     }
     
     public func setAttribute<T: PrimitiveDataType>(_ name: String, _ value: T) throws {
@@ -69,9 +71,11 @@ public struct Attribute<Parent: AttributeProvider> {
         guard type.typeid == String.netcdfType.rawValue else {
             return nil
         }
-        let cString = UnsafeMutableRawPointer.allocate(byteCount: length, alignment: 1)
-        try readRaw(into: cString)
-        return String(bytesNoCopy: cString, length: length, encoding: .utf8, freeWhenDone: true)
+        var strings = [UnsafeMutablePointer<Int8>.init(bitPattern: 0)]
+        try readRaw(into: &strings)
+        let string = String(cString: strings[0]!)
+        try netcdfLock.free_string(len: 1, stringArray: &strings)
+        return string
     }
     
     public func read<T: PrimitiveDataType>() throws -> [T]? {

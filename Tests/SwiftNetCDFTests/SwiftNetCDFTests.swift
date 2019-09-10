@@ -41,6 +41,18 @@ group: / {
         XCTAssertEqual(cdl, try file2.getCdl())
     }
     
+    func testAttributes() throws {
+        let file = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        try file.setAttribute("TEST1", Float(42))
+        let attr1: Float = try file.getAttribute("TEST1")!.read()!
+        XCTAssertEqual(attr1, 42)
+        
+        /// TODO should be use att_text as default?
+        try file.setAttribute("TEST2", "42")
+        let attr2: String = try file.getAttribute("TEST2")!.read()!
+        XCTAssertEqual(attr2, "42")
+    }
+    
     func testExample() {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct

@@ -61,6 +61,8 @@ extension Lock {
     
     var NC_UNLIMITED: Int { return CNetCDF.NC_UNLIMITED }
     
+    var NC_GLOBAL: Int32 { return CNetCDF.NC_GLOBAL }
+    
     /// Get all group IDs of a group id
     func inq_grps(ncid: Int32) throws -> [Int32] {
         var count: Int32 = 0
@@ -109,6 +111,14 @@ extension Lock {
         try nc_exec {
             nc_sync(ncid)
         }
+    }
+    
+    func inq_natts(ncid: Int32) throws -> Int32 {
+        var count: Int32 = 0
+        try nc_exec {
+            nc_inq_natts(ncid, &count)
+        }
+        return count
     }
     
     func inq_type(ncid: Int32, typeid: Int32) throws -> (name: String, size: Int) {
@@ -286,6 +296,13 @@ extension Lock {
         }
     }
     
+    func put_att_text(ncid: Int32, varid: Int32, name: String, length: Int, text: String) throws {
+        try netcdfLock.nc_exec {
+            nc_put_att_text(ncid, varid, name, length, text)
+        }
+    }
+    
+    
     func inq_attlen(ncid: Int32, varid: Int32, name: String) throws -> Int {
         var len: Int = 0
         try nc_exec {
@@ -297,6 +314,12 @@ extension Lock {
     func get_att(ncid: Int32, varid: Int32, name: String, buffer: UnsafeMutableRawPointer) throws {
         try nc_exec {
             nc_get_att(ncid, varid, name, buffer)
+        }
+    }
+    
+    func free_string(len: Int, stringArray: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>) throws {
+        try nc_exec {
+            nc_free_string(len, stringArray)
         }
     }
 }

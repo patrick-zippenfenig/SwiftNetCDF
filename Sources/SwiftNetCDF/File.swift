@@ -134,4 +134,16 @@ public final class Group {
     }
 }
 
-
+extension Group: AttributeProvider {
+    public var varid: Int32 {
+        return netcdfLock.NC_GLOBAL
+    }
+    
+    public var group: Group {
+        return self
+    }
+    
+    public var numberOfAttributes: Int32 {
+        return try! netcdfLock.inq_natts(ncid: ncid)
+    }
+}
