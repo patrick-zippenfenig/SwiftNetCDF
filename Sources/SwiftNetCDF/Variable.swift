@@ -61,11 +61,11 @@ public struct Variable {
     }
     
     /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
-    public func asType<T: Primitive>(_ of: T.Type) -> VariablePrimitive<T>? {
+    public func asType<T: ExternalDataProtocol>(_ of: T.Type) -> VariablePrimitive<T>? {
         guard case let DataType.primitive(primitive) = dataType else {
             return nil
         }
-        guard T.netCdfAtomic == primitive else {
+        guard T.netcdfType == primitive else {
             return nil
         }
         return VariablePrimitive(variable: self)
@@ -95,18 +95,17 @@ public struct Variable {
 
 
 /// A generic netcdf variable of a fixed data type
-public struct VariablePrimitive<T: Primitive> {
+public struct VariablePrimitive<T: ExternalDataProtocol> {
     let variable: Variable
     
     public func read(offset: [Int], count: [Int]) throws -> [T] {
         assert(offset.count == variable.dimensions.count)
         assert(count.count == variable.dimensions.count)
         let n_elements = count.reduce(1, *)
-        var array = T.netCdfCreateNaNArray(count: n_elements)
-        try netcdfLock.nc_exec {
-            T.nc_get_vara(variable.group.ncid, variable.varid, start: offset, count: count, data: &array)
-        }
-        return array
+        
+        return try T.createFromBuffer(length: n_elements, dataType: DataType.primitive(T.netcdfType)) { ptr in
+            try netcdfLock.get_vara(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, buffer: ptr)
+        }!
     }
     
     /// Read the whole variable
@@ -129,8 +128,8 @@ public struct VariablePrimitive<T: Primitive> {
     public func write(_ data: [T], offset: [Int], count: [Int]) throws {
         assert(variable.dimensions.count == offset.count)
         assert(variable.dimensions.count == count.count)
-        try netcdfLock.nc_exec {
-            T.nc_put_vara(variable.group.ncid, variable.varid, start: offset, count: count, data: data)
+        try T.withPointer(to: data) { type,ptr in
+            try netcdfLock.put_vara(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, ptr: ptr)
         }
     }
 }
