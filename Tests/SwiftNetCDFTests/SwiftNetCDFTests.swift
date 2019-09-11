@@ -62,6 +62,7 @@ group: / {
 
     static var allTests = [
         ("testCreateSimple", testCreateSimple),
+        ("testAttributes", testAttributes),
         ("testExample", testExample),
     ]
 }

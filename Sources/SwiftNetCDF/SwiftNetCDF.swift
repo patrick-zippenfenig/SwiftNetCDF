@@ -14,6 +14,7 @@ enum NetCDFError: Error {
     case badGroupid
     case badName
     case attributeNotFound
+    case valueCanNotBeConverted
     
     init(ncerr: Int32) {
         switch ncerr {

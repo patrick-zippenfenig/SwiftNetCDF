@@ -26,20 +26,22 @@ extension AttributeProvider {
         return try Attribute(fromExistingName: key, parent: self)
     }
     
-    public func setAttribute(_ name: String, _ value: String) throws {
+    /*public func setAttribute(_ name: String, _ value: String) throws {
         try value.withCString {
             try netcdfLock.put_att(ncid: group.ncid, varid: varid, name: name, type: String.netcdfType.rawValue, length: 1, ptr: [$0])
         }
-    }
+    }*/
     
-    public func setAttribute<T: ExternalDataProtocol>(_ name: String, _ value: T) throws {
-        try withUnsafePointer(to: value) {
-            try netcdfLock.put_att(ncid: group.ncid, varid: varid, name: name, type: T.netcdfType.rawValue, length: 1, ptr: $0)
+    public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: T) throws {
+        try T.withPointer(to: value) { type, ptr in
+            try setAttributeRaw(name: name, type: type, length: 1, ptr: ptr)
         }
     }
     
-    public func setAttribute<T: ExternalDataProtocol>(_ name: String, _ value: [T]) throws {
-        try netcdfLock.put_att(ncid: group.ncid, varid: varid, name: name, type: T.netcdfType.rawValue, length: value.count, ptr: value)
+    public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: [T]) throws {
+        try T.withPointer(to: value) { type, ptr in
+            try setAttributeRaw(name: name, type: type, length: value.count, ptr: ptr)
+        }
     }
     
     /// Set a netcdf attribute from raw pointer type
@@ -66,39 +68,12 @@ public struct Attribute<Parent: AttributeProvider> {
         }
     }
     
-    /// Read the attribte as string
-    public func read() throws -> String? {
-        guard type.typeid == String.netcdfType.rawValue else {
-            return nil
-        }
-        var strings = [UnsafeMutablePointer<Int8>.init(bitPattern: 0)]
-        try readRaw(into: &strings)
-        let string = String(cString: strings[0]!)
-        try netcdfLock.free_string(len: 1, stringArray: &strings)
-        return string
+    public func read<T: NetcdfConvertible>() throws -> [T]? {
+        return try T.createFromBuffer(length: length, dataType: type, fn: readRaw)
     }
     
-    public func read<T: ExternalDataProtocol>() throws -> [T]? {
-        guard T.netcdfType.rawValue == type.typeid else {
-            return nil
-        }
-        var arr = [T](repeating: T.emptyValue, count: length)
-        try withUnsafeMutablePointer(to: &arr) {
-            try readRaw(into: $0)
-        }
-        return arr
-    }
-    
-    public func read<T: ExternalDataProtocol>() throws -> T? {
-        // TODO should we ensure that length is 1 ?
-        guard T.netcdfType.rawValue == type.typeid else {
-            return nil
-        }
-        var value = T.emptyValue
-        try withUnsafeMutablePointer(to: &value) {
-            try readRaw(into: $0)
-        }
-        return value
+    public func read<T: NetcdfConvertible>() throws -> T? {
+        return try T.createFromPointer(dataType: type, fn: readRaw)
     }
     
     /// Read the raw into a prepared pointer
