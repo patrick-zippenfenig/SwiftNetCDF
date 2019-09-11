@@ -13,7 +13,7 @@ public enum DataClass: Int32 {
 }
 
 public enum DataType {
-    case primitive(PrimitiveType)
+    case primitive(ExternalDataType)
     case userDefined(UserDefinedType)
     
     var typeid: nc_type {
@@ -31,7 +31,7 @@ public enum DataType {
     var byteSize: Int { fatalError() }
     
     init(fromTypeId typeid: nc_type, group: Group) throws {
-        if let primitve = PrimitiveType(rawValue: typeid) {
+        if let primitve = ExternalDataType(rawValue: typeid) {
             self = DataType.primitive(primitve)
             return
         }

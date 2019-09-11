@@ -32,13 +32,13 @@ extension AttributeProvider {
         }
     }
     
-    public func setAttribute<T: PrimitiveDataType>(_ name: String, _ value: T) throws {
+    public func setAttribute<T: ExternalDataProtocol>(_ name: String, _ value: T) throws {
         try withUnsafePointer(to: value) {
             try netcdfLock.put_att(ncid: group.ncid, varid: varid, name: name, type: T.netcdfType.rawValue, length: 1, ptr: $0)
         }
     }
     
-    public func setAttribute<T: PrimitiveDataType>(_ name: String, _ value: [T]) throws {
+    public func setAttribute<T: ExternalDataProtocol>(_ name: String, _ value: [T]) throws {
         try netcdfLock.put_att(ncid: group.ncid, varid: varid, name: name, type: T.netcdfType.rawValue, length: value.count, ptr: value)
     }
     
@@ -78,7 +78,7 @@ public struct Attribute<Parent: AttributeProvider> {
         return string
     }
     
-    public func read<T: PrimitiveDataType>() throws -> [T]? {
+    public func read<T: ExternalDataProtocol>() throws -> [T]? {
         guard T.netcdfType.rawValue == type.typeid else {
             return nil
         }
@@ -89,7 +89,7 @@ public struct Attribute<Parent: AttributeProvider> {
         return arr
     }
     
-    public func read<T: PrimitiveDataType>() throws -> T? {
+    public func read<T: ExternalDataProtocol>() throws -> T? {
         // TODO should we ensure that length is 1 ?
         guard T.netcdfType.rawValue == type.typeid else {
             return nil
@@ -106,7 +106,7 @@ public struct Attribute<Parent: AttributeProvider> {
         try netcdfLock.get_att(ncid: parent.group.ncid, varid: parent.varid, name: name, buffer: buffer)
     }
     
-    public func to<T: PrimitiveDataType>(type _: T.Type) -> AttributePrimitiv<T>? {
+    public func to<T: ExternalDataProtocol>(type _: T.Type) -> AttributePrimitiv<T>? {
         guard T.netcdfType.rawValue == self.type.typeid else {
             return nil
         }

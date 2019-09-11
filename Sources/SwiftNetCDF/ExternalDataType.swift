@@ -9,20 +9,22 @@ import Foundation
 import CNetCDF
 
 /// Map netcdf type specific functions and swift data types
-
-public enum PrimitiveType: Int32 {
+public enum ExternalDataType: Int32 {
     //case not_a_type = 0
-    case byte = 1 // Int8 schar
-    case char = 2 // Int8 schar
-    case short = 3 // Int16 short
-    case int32 = 4
-    case float = 5
-    case double = 6
-    case ubyte = 7
-    case ushort = 8
-    case uint32 = 9
-    case int64 = 10
-    case string = 12
+    case byte = 1 // Int8 8-bit signed integer
+    case char = 2 // Int8 8-bit character
+    case short = 3 // Int16 NC_SHORT 16-bit integer
+    case int32 = 4 // NC_INT (or NC_LONG) 32-bit signed integer
+    case float = 5 // NC_FLOAT 32-bit floating point
+    case double = 6 // NC_DOUBLE 64-bit floating point
+    case ubyte = 7 // NC_UBYTE 8-bit unsigned integer *
+    case ushort = 8 // NC_USHORT 16-bit unsigned integer *
+    case uint32 = 9 // NC_UINT 32-bit unsigned integer *
+    case int64 = 10 // NC_INT64 64-bit signed integer *
+    case uint64 = 11 // NC_UINT64 64-bit unsigned integer *
+    case string = 12 // NC_STRING variable length character string (available only for netCDF-4 (NC_NETCDF4) files.)
+    
+    //  These types are available only for CDF5 (NC_CDF5) and netCDF-4 format (NC_NETCDF4) files. All the unsigned ints and the 64-bit ints are for CDF5 or netCDF-4 files only.
     
     var name: String {
         return "\(self)"
@@ -30,23 +32,22 @@ public enum PrimitiveType: Int32 {
 }
 
 
-
-public protocol PrimitiveDataType {
-    static var netcdfType: PrimitiveType { get }
+public protocol ExternalDataProtocol {
+    static var netcdfType: ExternalDataType { get }
     static var emptyValue: Self { get }
 }
 
-extension Float: PrimitiveDataType {
+extension Float: ExternalDataProtocol {
     public static var emptyValue: Float { return Float.nan }
-    public static var netcdfType: PrimitiveType { return .float }
+    public static var netcdfType: ExternalDataType { return .float }
 }
 
 extension String {
-    public static var netcdfType: PrimitiveType { return .string }
+    public static var netcdfType: ExternalDataType { return .string }
 }
 
 public protocol Primitive: Equatable {
-    static var netCdfAtomic: PrimitiveType { get }
+    static var netCdfAtomic: ExternalDataType { get }
     static var netCdfNaNValue: Self { get }
     static func nc_put_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: [Self]) -> Int32
     static func nc_get_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: inout [Self]) -> Int32
@@ -74,7 +75,7 @@ extension Float: Primitive {
     public static func nc_get_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: inout [Float]) -> Int32 {
         return nc_get_vara_float(ncid, varid, start, count, &data)
     }
-    public static var netCdfAtomic: PrimitiveType { return .float }
+    public static var netCdfAtomic: ExternalDataType { return .float }
 }
 
 extension Double: Primitive {
@@ -96,7 +97,7 @@ extension Double: Primitive {
     public static func nc_get_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: inout [Double]) -> Int32 {
         return nc_get_vara_double(ncid, varid, start, count, &data)
     }
-    public static var netCdfAtomic: PrimitiveType { return .double }
+    public static var netCdfAtomic: ExternalDataType { return .double }
 }
 
 extension Int: Primitive {
@@ -117,7 +118,7 @@ extension Int: Primitive {
     public static func nc_get_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: inout [Int]) -> Int32 {
         return nc_get_vara_long(ncid, varid, start, count, &data)
     }
-    public static var netCdfAtomic: PrimitiveType { return .int64 }
+    public static var netCdfAtomic: ExternalDataType { return .int64 }
 }
 
 
@@ -141,7 +142,7 @@ extension Int32: Primitive {
     public static func nc_get_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: inout [Int32]) -> Int32 {
         return nc_get_vara_int(ncid, varid, start, count, &data)
     }
-    public static var netCdfAtomic: PrimitiveType { return .int32 }
+    public static var netCdfAtomic: ExternalDataType { return .int32 }
 }
 
 extension Int16: Primitive {
@@ -164,7 +165,7 @@ extension Int16: Primitive {
     public static func nc_get_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: inout [Int16]) -> Int32 {
         return nc_get_vara_short(ncid, varid, start, count, &data)
     }
-    public static var netCdfAtomic: PrimitiveType { return .short }
+    public static var netCdfAtomic: ExternalDataType { return .short }
 }
 
 
@@ -188,7 +189,7 @@ extension UInt32: Primitive {
     public static func nc_get_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: inout [UInt32]) -> Int32 {
         return nc_get_vara_uint(ncid, varid, start, count, &data)
     }
-    public static var netCdfAtomic: PrimitiveType { return .ushort }
+    public static var netCdfAtomic: ExternalDataType { return .ushort }
 }
 
 extension UInt16: Primitive {
@@ -212,7 +213,7 @@ extension UInt16: Primitive {
     public static func nc_get_vara(_ ncid: Int32, _ varid: Int32, start: [Int], count: [Int], data: inout [UInt16]) -> Int32 {
         return nc_get_vara_ushort(ncid, varid, start, count, &data)
     }
-    public static var netCdfAtomic: PrimitiveType { return .ushort }
+    public static var netCdfAtomic: ExternalDataType { return .ushort }
 }
 
 extension UInt8: Primitive {
@@ -243,5 +244,5 @@ extension UInt8: Primitive {
             return nc_get_vara_schar(ncid, varid, start, count, ptr)
         }
     }
-    public static var netCdfAtomic: PrimitiveType { return .byte }
+    public static var netCdfAtomic: ExternalDataType { return .byte }
 }

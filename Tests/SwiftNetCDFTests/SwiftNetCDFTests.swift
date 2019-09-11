@@ -47,7 +47,6 @@ group: / {
         let attr1: Float = try file.getAttribute("TEST1")!.read()!
         XCTAssertEqual(attr1, 42)
         
-        /// TODO should be use att_text as default?
         try file.setAttribute("TEST2", "42")
         let attr2: String = try file.getAttribute("TEST2")!.read()!
         XCTAssertEqual(attr2, "42")
