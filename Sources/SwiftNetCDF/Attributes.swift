@@ -33,9 +33,7 @@ extension AttributeProvider {
     }*/
     
     public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: T) throws {
-        try T.withPointer(to: value) { type, ptr in
-            try setAttributeRaw(name: name, type: type, length: 1, ptr: ptr)
-        }
+        try setAttribute(name, [value])
     }
     
     public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: [T]) throws {
@@ -73,7 +71,7 @@ public struct Attribute<Parent: AttributeProvider> {
     }
     
     public func read<T: NetcdfConvertible>() throws -> T? {
-        return try T.createFromPointer(dataType: type, fn: readRaw)
+        return try read()?.first
     }
     
     /// Read the raw into a prepared pointer
