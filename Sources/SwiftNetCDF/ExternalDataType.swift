@@ -117,7 +117,7 @@ extension String: NetcdfConvertible {
     public static func withPointer(to: [String], fn: (UnsafeRawPointer) throws -> ()) throws {
         /// Cast data to a C string and then prepare an array of pointer
         let cStrings = to.map { $0.cString(using: .utf8)! }
-        let pointers = cStrings.map { $0.withUnsafeBytes { $0 } }
+        let pointers = cStrings.map { $0.withUnsafeBytes { $0.baseAddress! } }
         try fn(pointers)
     }
 }

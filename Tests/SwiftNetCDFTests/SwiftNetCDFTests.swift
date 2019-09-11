@@ -51,9 +51,9 @@ group: / {
         let attr2: String = try file.getAttribute("TEST2")!.read()!
         XCTAssertEqual(attr2, "42")
         
-        /*try file.setAttribute("TEST3", ["123","345"])
+        try file.setAttribute("TEST3", ["123","345","678"])
         let attr3: [String] = try file.getAttribute("TEST3")!.read()!
-        XCTAssertEqual(attr3, ["123","345"])*/
+        XCTAssertEqual(attr3, ["123","345","678"])
     }
     
     func testExample() {
