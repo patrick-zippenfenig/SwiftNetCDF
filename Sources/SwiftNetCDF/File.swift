@@ -94,9 +94,8 @@ public final class Group {
         return try Variable(name: name, dataType: dataType, dimensions: dimensions, group: self)
     }
     
-    public func createVariable<T: Primitive>(name: String, type: T.Type, dimensions: [Dimension]) throws -> VariablePrimitive<T> {
-        
-        let vari = try createVariable(name: name, dataType: DataType.primitive(T.netCdfAtomic), dimensions: dimensions)
+    public func createVariable<T: NetcdfConvertible>(name: String, type: T.Type, dimensions: [Dimension]) throws -> VariablePrimitive<T> {
+        let vari = try createVariable(name: name, dataType: DataType.primitive(T.netcdfType), dimensions: dimensions)
         return VariablePrimitive(variable: vari)
     }
     

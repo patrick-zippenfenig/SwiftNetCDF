@@ -26,18 +26,13 @@ extension AttributeProvider {
         return try Attribute(fromExistingName: key, parent: self)
     }
     
-    /*public func setAttribute(_ name: String, _ value: String) throws {
-        try value.withCString {
-            try netcdfLock.put_att(ncid: group.ncid, varid: varid, name: name, type: String.netcdfType.rawValue, length: 1, ptr: [$0])
-        }
-    }*/
-    
     public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: T) throws {
         try setAttribute(name, [value])
     }
     
     public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: [T]) throws {
-        try T.withPointer(to: value) { type, ptr in
+        let type = DataType.primitive(T.netcdfType)
+        try T.withPointer(to: value) { ptr in
             try setAttributeRaw(name: name, type: type, length: value.count, ptr: ptr)
         }
     }
@@ -67,10 +62,16 @@ public struct Attribute<Parent: AttributeProvider> {
     }
     
     public func read<T: NetcdfConvertible>() throws -> [T]? {
-        return try T.createFromBuffer(length: length, dataType: type, fn: readRaw)
+        guard T.netcdfType.rawValue == type.typeid else {
+            return nil
+        }
+        return try T.createFromBuffer(length: length, fn: readRaw)
     }
     
     public func read<T: NetcdfConvertible>() throws -> T? {
+        guard length == 1 else {
+            return nil
+        }
         return try read()?.first
     }
     
@@ -79,7 +80,7 @@ public struct Attribute<Parent: AttributeProvider> {
         try netcdfLock.get_att(ncid: parent.group.ncid, varid: parent.varid, name: name, buffer: buffer)
     }
     
-    public func to<T: ExternalDataProtocol>(type _: T.Type) -> AttributePrimitiv<T>? {
+    public func to<T: NetcdfConvertible>(type _: T.Type) -> AttributePrimitiv<T>? {
         guard T.netcdfType.rawValue == self.type.typeid else {
             return nil
         }
@@ -88,6 +89,6 @@ public struct Attribute<Parent: AttributeProvider> {
 }
 
 /// is this layer usefull?
-public struct AttributePrimitiv<T: Primitive> {
+public struct AttributePrimitiv<T: NetcdfConvertible> {
     
 }

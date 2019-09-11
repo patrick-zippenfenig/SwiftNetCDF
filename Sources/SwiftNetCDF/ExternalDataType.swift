@@ -32,35 +32,31 @@ public enum ExternalDataType: Int32 {
 }
 
 
-// TODO withPointer might not work because user types cannot supply their own datatype......
-
 /// Conforming allows read and write operations for netcdf read/write
 public protocol NetcdfConvertible {
     /// This function should prepare a buffer, pass it to a clouse which reads binary data and then return an array of that type
-    static func createFromBuffer(length: Int, dataType: DataType, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [Self]?
+    static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [Self]
     
     /// Serialise array of values
-    static func withPointer(to: [Self], fn: (DataType, UnsafeRawPointer) throws -> ()) throws
-}
-
-
-public protocol ExternalDataProtocol: NetcdfConvertible {
-    static var emptyValue: Self { get }
+    static func withPointer(to: [Self], fn: (UnsafeRawPointer) throws -> ()) throws
+    
     static var netcdfType: ExternalDataType { get }
 }
 
+
+fileprivate protocol ExternalDataProtocol: NetcdfConvertible {
+    static var emptyValue: Self { get }
+}
+
 extension ExternalDataProtocol {
-    public static func createFromBuffer(length: Int, dataType: DataType, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [Self]? {
-        guard netcdfType.rawValue == dataType.typeid else {
-            return nil
-        }
+    public static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [Self] {
         var arr = [Self](repeating: emptyValue, count: length)
         try fn(&arr)
         return arr
     }
     
-    public static func withPointer(to: [Self], fn: (DataType, UnsafeRawPointer) throws -> ()) throws {
-        try fn(DataType.primitive(netcdfType), to)
+    public static func withPointer(to: [Self], fn: (UnsafeRawPointer) throws -> ()) throws {
+        try fn(to)
     }
 }
 
@@ -110,10 +106,7 @@ extension UInt: ExternalDataProtocol {
 extension String: NetcdfConvertible {
     public static var netcdfType: ExternalDataType { return .string }
     
-    public static func createFromBuffer(length: Int, dataType: DataType, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [String]? {
-        guard netcdfType.rawValue == dataType.typeid else {
-            return nil
-        }
+    public static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [String] {
         var pointers = [UnsafeMutablePointer<Int8>?](repeating: nil, count: length)
         try fn(&pointers)
         let strings = pointers.map { String(cString: $0!) }
@@ -121,15 +114,15 @@ extension String: NetcdfConvertible {
         return strings
     }
     
-    public static func withPointer(to: [String], fn: (DataType, UnsafeRawPointer) throws -> ()) throws {
+    public static func withPointer(to: [String], fn: (UnsafeRawPointer) throws -> ()) throws {
         /// Cast data to a C string and then prepare an array of pointer
         let cStrings = to.map { $0.cString(using: .utf8)! }
         let pointers = cStrings.map { $0.withUnsafeBytes { $0 } }
-        try fn(DataType.primitive(netcdfType), pointers)
+        try fn(pointers)
     }
 }
 
-
+/*
 
 public protocol Primitive: Equatable {
     static var netCdfAtomic: ExternalDataType { get }
@@ -331,3 +324,4 @@ extension UInt8: Primitive {
     }
     public static var netCdfAtomic: ExternalDataType { return .byte }
 }
+*/
