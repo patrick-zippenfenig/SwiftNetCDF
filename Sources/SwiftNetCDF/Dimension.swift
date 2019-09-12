@@ -39,10 +39,10 @@ public struct Dimension {
         self.isUnlimited = isUnlimited
     }
     
-    public func getCdl() -> String {
+    /*public func getCdl() -> String {
         if isUnlimited {
             return "\(name) UNLIMITED ; // \(length) currently"
         }
         return "\(name) = \(length) ;"
-    }
+    }*/
 }

@@ -38,15 +38,15 @@ extension AttributeProvider {
     
     /// Define a new attribute by name. The value must be a supported external type.
     public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: [T]) throws {
-        let type = DataType.primitive(T.netcdfType)
+        let type = T.netcdfType.typeId
         try T.withPointer(to: value) { ptr in
             try setAttributeRaw(name: name, type: type, length: value.count, ptr: ptr)
         }
     }
     
     /// Set a netcdf attribute from raw pointer type
-    public func setAttributeRaw(name: String, type: DataType, length: Int, ptr: UnsafeRawPointer) throws {
-        try varid.put_att(name: name, type: type.typeid, length: length, ptr: ptr)
+    public func setAttributeRaw(name: String, type: TypeId, length: Int, ptr: UnsafeRawPointer) throws {
+        try varid.put_att(name: name, type: type, length: length, ptr: ptr)
     }
 }
 
@@ -54,7 +54,7 @@ extension AttributeProvider {
 public struct Attribute<Parent: AttributeProvider> {
     public let parent: Parent
     public let name: String
-    public let type: DataType
+    public let type: TypeId
     public let length: Int
     
     /// Try to initialise from a name. Nil if the attributes does not exist
@@ -63,7 +63,7 @@ public struct Attribute<Parent: AttributeProvider> {
             let attinq = try parent.varid.inq_att(name: name)
             self.parent = parent
             self.length = attinq.length
-            self.type = DataType(fromTypeId: attinq.typeid, group: parent.group)
+            self.type = attinq.type
             self.name = name
         } catch NetCDFError.attributeNotFound {
             return nil
@@ -92,7 +92,7 @@ public struct Attribute<Parent: AttributeProvider> {
     }
     
     public func to<T: NetcdfConvertible>(type _: T.Type) -> AttributeGeneric<T>? {
-        guard T.netcdfType.typeId == self.type.typeid else {
+        guard T.canRead(type: type) else {
             return nil
         }
         return AttributeGeneric()

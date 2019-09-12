@@ -39,7 +39,7 @@ public final class Group {
     }
     
     /// Return the (CDL Common Data Language) representation
-    public func getCdl(headerOnly: Bool = true, indent: Int = 0) -> String {
+    /*public func getCdl(headerOnly: Bool = true, indent: Int = 0) -> String {
         var out = ""
         let ind = String(repeating: " ", count: indent)
         let dimensions = getDimensions()
@@ -56,7 +56,7 @@ public final class Group {
         }
         out += "\(ind)  } // group \(name)"
         return out
-    }
+    }*/
     
     /// Return all dimensions registered in this group
     public func getDimensions() -> [Dimension] {
@@ -82,12 +82,12 @@ public final class Group {
     }
     
     /// Define a new variable in the netcdf file
-    public func createVariable(name: String, dataType: DataType, dimensions: [Dimension]) throws -> Variable {
-        return try Variable(name: name, dataType: dataType, dimensions: dimensions, group: self)
+    public func createVariable(name: String, type: TypeId, dimensions: [Dimension]) throws -> Variable {
+        return try Variable(name: name, type: type, dimensions: dimensions, group: self)
     }
     
     public func createVariable<T: NetcdfConvertible>(name: String, type: T.Type, dimensions: [Dimension]) throws -> VariableGeneric<T> {
-        let vari = try createVariable(name: name, dataType: DataType.primitive(T.netcdfType), dimensions: dimensions)
+        let vari = try createVariable(name: name, type: T.netcdfType.typeId, dimensions: dimensions)
         return VariableGeneric(variable: vari)
     }
     

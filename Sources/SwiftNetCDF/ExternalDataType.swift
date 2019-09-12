@@ -50,11 +50,17 @@ public protocol NetcdfConvertible {
 }
 
 extension NetcdfConvertible {
-    static func canRead(type: DataType) -> Bool {
+    /*static func canRead(type: DataType) -> Bool {
         guard case let DataType.primitive(primitive) = type else {
             return false
         }
         return canRead(type: primitive)
+    }*/
+    static func canRead(type: TypeId) -> Bool {
+        guard let externalType = ExternalDataType(rawValue: type.typeid) else {
+            return false
+        }
+        return canRead(type: externalType)
     }
 }
 

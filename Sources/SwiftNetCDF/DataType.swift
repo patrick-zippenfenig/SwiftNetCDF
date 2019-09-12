@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum DataClass: Int32 {
+/*public enum DataClass: Int32 {
     case nc_vlen = 9999 // NC_VLEN
 }
 
@@ -29,13 +29,13 @@ public enum DataType {
     }
     var byteSize: Int { fatalError() }
     
-    init(fromTypeId typeid: TypeId, group: Group) {
-        if let primitve = ExternalDataType(rawValue: typeid.typeid) {
+    init(type: TypeId, group: Group) {
+        if let primitve = ExternalDataType(rawValue: type.typeid) {
             self = DataType.primitive(primitve)
             return
         }
         
-        let typeInq = try! group.ncid.inq_user_type(typeid: typeid)
+        let typeInq = try! group.ncid.inq_user_type(type: type)
         // TODO switch user types
         fatalError()
         
@@ -83,3 +83,4 @@ public struct VariableLength {
     let size: Int
     let baseTypeId: Int32
 }
+*/

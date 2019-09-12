@@ -72,7 +72,7 @@ public struct VarId {
     }
     
     /// Get information about this variable
-    public func inq_var() -> (name: String, typeid: TypeId, dimensionIds: [DimId], nAttributes: Int32) {
+    public func inq_var() -> (name: String, type: TypeId, dimensionIds: [DimId], nAttributes: Int32) {
         let nDimensions = inq_varndims()
         var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
         var nAttribudes: Int32 = 0
@@ -92,7 +92,7 @@ public struct VarId {
     }
     
     /// Get the type and length of an attribute. Throws on internal netcdf stuff.
-    public func inq_att(name: String) throws -> (typeid: TypeId, length: Int) {
+    public func inq_att(name: String) throws -> (type: TypeId, length: Int) {
         var typeid: Int32 = 0
         var len: Int = 0
         try Nc.exec {
@@ -277,22 +277,22 @@ public struct NcId {
     }
     
     /// Get information on a type. Works for external and user types
-    public func inq_type(typeid: TypeId) throws -> (name: String, size: Int) {
+    public func inq_type(type: TypeId) throws -> (name: String, size: Int) {
         var size = 0
         let name = try Nc.execWithStringBuffer {
-            nc_inq_type(ncid, typeid.typeid, $0, &size)
+            nc_inq_type(ncid, type.typeid, $0, &size)
         }
         return (name, size)
     }
     
     /// Get information on user types. Does not work for external types
-    public func inq_user_type(typeid: TypeId) throws -> (name: String, size: Int, baseTypeId: TypeId, numberOfFields: Int, classType: Int32) {
+    public func inq_user_type(type: TypeId) throws -> (name: String, size: Int, baseType: TypeId, numberOfFields: Int, classType: Int32) {
         var size = 0
         var baseTypeId: Int32 = 0
         var numberOfFields = 0
         var classType: Int32 = 0
         let name = try Nc.execWithStringBuffer {
-            nc_inq_user_type(ncid, typeid.typeid, $0, &size, &baseTypeId, &numberOfFields, &classType)
+            nc_inq_user_type(ncid, type.typeid, $0, &size, &baseTypeId, &numberOfFields, &classType)
         }
         return (name, size, TypeId(baseTypeId), numberOfFields, classType)
     }
@@ -498,10 +498,10 @@ public struct NcId {
     }
     
     /// Define a new variable
-    public func def_var( name: String, typeid: TypeId, dimensionIds: [DimId]) throws -> VarId {
+    public func def_var( name: String, type: TypeId, dimensionIds: [DimId]) throws -> VarId {
         var varid: Int32 = 0
         try Nc.exec {
-            nc_def_var(ncid, name, typeid.typeid, Int32(dimensionIds.count), dimensionIds.map{$0.dimid}, &varid)
+            nc_def_var(ncid, name, type.typeid, Int32(dimensionIds.count), dimensionIds.map{$0.dimid}, &varid)
         }
         return VarId(ncid: self, varid: varid)
     }

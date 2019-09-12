@@ -13,7 +13,7 @@ public struct Variable {
     public let name: String
     public let varid: VarId
     public let dimensions: [Dimension]
-    public let dataType: DataType
+    public let type: TypeId
     
     public var count: Int { return dimensions.reduce(1, {$0 * $1.length}) }
     
@@ -30,20 +30,20 @@ public struct Variable {
         self.dimensions = varinq.dimensionIds.map {
             Dimension(fromDimId: $0, isUnlimited: unlimitedDimensions.contains($0), group: group)
         }
-        self.dataType = DataType(fromTypeId: varinq.typeid, group: group)
+        self.type = varinq.type
     }
     
     /**
      Define a new variable in the NetCDF file
      */
-    init(name: String, dataType: DataType, dimensions: [Dimension], group: Group) throws {
+    init(name: String, type: TypeId, dimensions: [Dimension], group: Group) throws {
         let dimensionIds = dimensions.map { $0.dimid }
-        let varid = try group.ncid.def_var(name: name, typeid: dataType.typeid, dimensionIds: dimensionIds)
+        let varid = try group.ncid.def_var(name: name, type: type, dimensionIds: dimensionIds)
         self.group = group
         self.name = name
         self.varid = varid
         self.dimensions = dimensions
-        self.dataType = dataType
+        self.type = type
     }
     
     /**
@@ -120,7 +120,7 @@ public struct Variable {
     
     /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
     public func asType<T: NetcdfConvertible>(_ of: T.Type) -> VariableGeneric<T>? {
-        guard T.canRead(type: dataType) else {
+        guard T.canRead(type: type) else {
             return nil
         }
         return VariableGeneric(variable: self)
@@ -141,11 +141,11 @@ public struct Variable {
         return data
     }*/
     
-    public func getCdl(indent: Int) -> String {
+    /*public func getCdl(indent: Int) -> String {
         let ind = String(repeating: " ", count: indent)
         let dims = dimensions.map { $0.name }.joined(separator: ", ")
-        return "\(ind)\(dataType.name) \(name)(\(dims)) ;\n"
-    }
+        return "\(ind)\(type.name) \(name)(\(dims)) ;\n"
+    }*/
 }
 
 extension Variable: AttributeProvider {
