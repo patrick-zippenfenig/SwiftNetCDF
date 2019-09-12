@@ -128,26 +128,55 @@ public struct Variable {
         return VariableGeneric(variable: self)
     }
     
-    /// Read raw by using the datatype size directly
-    /*public func readRaw(offset: [Int], count: [Int]) throws -> Data {
-        assert(dimensions.count == offset.count)
-        assert(dimensions.count == count.count)
-        let n_elements = count.reduce(1, *)
-        let n_bytes = n_elements * dataType.byteSize
-        var data = Data(capacity: n_bytes)
-        try withUnsafeMutablePointer(to: &data) { ptr in
-            try Nc.nc_exec {
-                nc_get_vara(group.ncid, varid, offset, count, ptr)
-            }
+    /// Unsafe because the data length is not validated.
+    func readUnsafe(into: UnsafeMutableRawPointer, offset: [Int], count: [Int]) throws {
+        guard dimensions.count == offset.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
         }
-        return data
-    }*/
+        guard dimensions.count == count.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        try varid.get_vara(offset: offset, count: count, buffer: into)
+    }
     
-    /*public func getCdl(indent: Int) -> String {
-        let ind = String(repeating: " ", count: indent)
-        let dims = dimensions.map { $0.name }.joined(separator: ", ")
-        return "\(ind)\(type.name) \(name)(\(dims)) ;\n"
-    }*/
+    /// Unsafe because the data length is not validated.
+    func readUnsafe(into: UnsafeMutableRawPointer, offset: [Int], count: [Int], stride: [Int]) throws {
+        guard dimensions.count == offset.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard dimensions.count == count.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard dimensions.count == stride.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        try varid.get_vars(offset: offset, count: count, stride: stride, buffer: into)
+    }
+    
+    /// Unsafe because the data length is not validated.
+    func writeUnsafe(from: UnsafeRawPointer, offset: [Int], count: [Int]) throws {
+        guard dimensions.count == offset.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard dimensions.count == count.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        try varid.put_vara(offset: offset, count: count, ptr: from)
+    }
+    
+    /// Unsafe because the data length is not validated.
+    func writeUnsafe(from: UnsafeRawPointer, offset: [Int], count: [Int], stride: [Int]) throws {
+        guard dimensions.count == offset.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard dimensions.count == count.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard dimensions.count == stride.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        try varid.put_vars(offset: offset, count: count, stride: stride, ptr: from)
+    }
 }
 
 extension Variable: AttributeProvider {
@@ -159,39 +188,24 @@ extension Variable: AttributeProvider {
 
 
 /// A generic netcdf variable of a fixed data type
+/// - TODO: functions should also be exposed to Variable generic
 public struct VariableGeneric<T: NetcdfConvertible> {
-    /// TODO functions should also be exposed to Variable generic
-    
+    /// The non generic underlaying variable
     public let variable: Variable
     
+    /// Read by offset and count vector
     public func read(offset: [Int], count: [Int]) throws -> [T] {
-        guard variable.dimensions.count == offset.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        guard variable.dimensions.count == count.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        
         let n_elements = count.reduce(1, *)
         return try T.createFromBuffer(length: n_elements) { ptr in
-            try variable.varid.get_vara(offset: offset, count: count, buffer: ptr)
+            try variable.readUnsafe(into: ptr, offset: offset, count: count)
         }
     }
     
+    /// Read by offset, count and stride vector
     public func read(offset: [Int], count: [Int], stride: [Int]) throws -> [T] {
-        guard variable.dimensions.count == offset.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        guard variable.dimensions.count == count.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        guard variable.dimensions.count == stride.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        
         let n_elements = count.reduce(1, *)
         return try T.createFromBuffer(length: n_elements) { ptr in
-            try variable.varid.get_vars(offset: offset, count: count, stride: stride, buffer: ptr)
+            try variable.readUnsafe(into: ptr, offset: offset, count: count, stride: stride)
         }
     }
     
@@ -207,7 +221,6 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         guard variable.count == data.count else {
             throw NetCDFError.numberOfElementsInvalid
         }
-        
         let offest = [Int](repeating: 0, count: variable.dimensions.count)
         let dimensions = variable.dimensions.map { $0.length }
         try write(data, offset: offest, count: dimensions)
@@ -215,32 +228,15 @@ public struct VariableGeneric<T: NetcdfConvertible> {
     
     /// Write only a defined subset specified by offset and count
     public func write(_ data: [T], offset: [Int], count: [Int]) throws {
-        guard variable.dimensions.count == offset.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        guard variable.dimensions.count == count.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        
         try T.withPointer(to: data) { ptr in
-            try variable.varid.put_vara(offset: offset, count: count, ptr: ptr)
+            try variable.writeUnsafe(from: ptr, offset: offset, count: count)
         }
     }
     
     /// Write only a defined subset specified by offset, count and stride
     public func write(_ data: [T], offset: [Int], count: [Int], stride: [Int]) throws {
-        guard variable.dimensions.count == offset.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        guard variable.dimensions.count == count.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        guard variable.dimensions.count == stride.count else {
-            throw NetCDFError.numberOfDimensionsInvalid
-        }
-        
         try T.withPointer(to: data) { ptr in
-            try variable.varid.put_vars(offset: offset, count: count, stride: stride, ptr: ptr)
+            try variable.writeUnsafe(from: ptr, offset: offset, count: count, stride: stride)
         }
     }
 }
