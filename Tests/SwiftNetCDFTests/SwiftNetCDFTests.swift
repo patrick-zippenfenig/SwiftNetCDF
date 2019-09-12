@@ -9,7 +9,7 @@ final class SwiftNetCDFTests: XCTestCase {
     func testCreateSimple() throws {
         let data = (Int32(0)..<50).map{$0}
         
-        let file = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let file = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         
         let dims = [
             try file.createDimension(name: "LAT", length: 10),
@@ -22,7 +22,7 @@ final class SwiftNetCDFTests: XCTestCase {
         
         
         // Open the same file again and read the data
-        let file2 = try File.open(file: "test.nc", allowWrite: false)
+        let file2 = try File.open(path: "test.nc", allowWrite: false)
         let vari2 = file2.getVariable(byName: "MyData")!.asType(Int32.self)!
         let data2 = try vari2.read()
         XCTAssertEqual(data, data2)
@@ -45,7 +45,7 @@ group: / {
      Test groups with subgroups
      */
     func testGroups() throws {
-        let file = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let file = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         let group1 = try file.createGroup(name: "GROUP1")
         XCTAssertNotNil(file.getGroup(byName: "GROUP1"))
         XCTAssertNil(file.getGroup(byName: "NotExistingGroup"))
@@ -70,7 +70,7 @@ group: / {
      */
     func testAttributes() throws {
         let data_float = [Float(42), 34, 123]
-        let file_raw = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let file_raw = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         let variable = try file_raw.createGroup(name: "TEST").createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [try file_raw.createDimension(name: "MYDIM", length: 5)])
         let file = variable.variable
         

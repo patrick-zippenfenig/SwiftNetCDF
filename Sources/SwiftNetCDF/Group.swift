@@ -152,7 +152,7 @@ public final class Group {
      - Throws:
      - `NetCDFError.badGroupid` The ncid must refer to the root group of the file and not a subgroup
      - `NetCDFError.alreadyInDefineMode` Already in define mode
-     - `NetCDFError.fileIsReadOnly` File is read only
+     - `NetCDFError.noPermissions` File is read only
      */
     public func redefine() throws {
         try ncid.redef()
@@ -196,7 +196,7 @@ public final class Group {
      
      - Parameter mode: `.fill` or `.noFill`
      
-     - Throws: `NetCDFError.fileIsReadOnly` if file is in read only mode
+     - Throws: `NetCDFError.noPermissions` if file is in read only mode
      */
     public func setFillMode(_ mode: NcId.FillMode) throws {
         try ncid.set_fill(mode: mode)

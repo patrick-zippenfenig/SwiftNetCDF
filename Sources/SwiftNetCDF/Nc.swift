@@ -19,12 +19,17 @@ public enum NetCDFError: Error {
     case badName
     case alreadyInDefineMode
     case attributeNotFound
-    case fileIsReadOnly
+    case noPermissions
     case valueCanNotBeConverted
     case operationRequiresNetCDFv4
     case fileIsInStrictNetCDFv3Mode
     case numberOfDimensionsInvalid
     case numberOfElementsInvalid
+    case tooManyOpenFiles
+    case outOfMemory
+    case hdf5Error
+    case netCDF4MetedataError
+    case alreadyExists
     
     init(ncerr: Int32) {
         switch ncerr {
@@ -35,10 +40,15 @@ public enum NetCDFError: Error {
         case NC_EBADNAME: self = .badName
         case NC_ENOTATT: self = .attributeNotFound
         case NC_EINDEFINE: self = .alreadyInDefineMode
-        case NC_EPERM: self = .fileIsReadOnly
+        case NC_EPERM: self = .noPermissions
         case NC_ENOTNC4: self = .operationRequiresNetCDFv4
         case NC_ESTRICTNC3: self = .fileIsInStrictNetCDFv3Mode
         case NC_ENOGRP: self = .noGroupFound
+        case NC_ENFILE: self = .tooManyOpenFiles
+        case NC_ENOMEM: self = .outOfMemory
+        case NC_EHDFERR: self = .hdf5Error
+        case NC_EDIMMETA: self = .netCDF4MetedataError
+        case NC_EEXIST: self = .alreadyExists
         default:
             let error = String(cString: nc_strerror(ncerr))
             self = .ncerror(code: ncerr, error: error)
