@@ -23,6 +23,8 @@ public enum NetCDFError: Error {
     case valueCanNotBeConverted
     case operationRequiresNetCDFv4
     case fileIsInStrictNetCDFv3Mode
+    case numberOfDimensionsInvalid
+    case numberOfElementsInvalid
     
     init(ncerr: Int32) {
         switch ncerr {

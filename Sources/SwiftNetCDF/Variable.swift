@@ -82,7 +82,9 @@ public struct Variable {
      Note that this does not work for scalar variables. Only non-scalar variables can have chunking.
      */
     public func defineChunking(chunking: VarId.Chunking, chunks: [Int]) throws {
-        precondition(chunks.count == dimensions.count, "Chunk dimensions must have the same amount of elements as variable dimensions")
+        guard chunks.count == dimensions.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
         try varid.def_var_chunking(type: chunking, chunks: chunks)
     }
     
@@ -163,21 +165,31 @@ public struct VariableGeneric<T: NetcdfConvertible> {
     public let variable: Variable
     
     public func read(offset: [Int], count: [Int]) throws -> [T] {
-        assert(offset.count == variable.dimensions.count)
-        assert(count.count == variable.dimensions.count)
-        let n_elements = count.reduce(1, *)
+        guard variable.dimensions.count == offset.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard variable.dimensions.count == count.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
         
+        let n_elements = count.reduce(1, *)
         return try T.createFromBuffer(length: n_elements) { ptr in
             try variable.varid.get_vara(offset: offset, count: count, buffer: ptr)
         }
     }
     
     public func read(offset: [Int], count: [Int], stride: [Int]) throws -> [T] {
-        assert(offset.count == variable.dimensions.count)
-        assert(count.count == variable.dimensions.count)
-        assert(stride.count == variable.dimensions.count)
-        let n_elements = count.reduce(1, *)
+        guard variable.dimensions.count == offset.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard variable.dimensions.count == count.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard variable.dimensions.count == stride.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
         
+        let n_elements = count.reduce(1, *)
         return try T.createFromBuffer(length: n_elements) { ptr in
             try variable.varid.get_vars(offset: offset, count: count, stride: stride, buffer: ptr)
         }
@@ -192,7 +204,9 @@ public struct VariableGeneric<T: NetcdfConvertible> {
     
     /// Write a complete array to the file. The array must be as large as the defined dimensions
     public func write(_ data: [T]) throws {
-        assert(variable.count == data.count, "Array counts \(data.count) does not match \(variable.count)")
+        guard variable.count == data.count else {
+            throw NetCDFError.numberOfElementsInvalid
+        }
         
         let offest = [Int](repeating: 0, count: variable.dimensions.count)
         let dimensions = variable.dimensions.map { $0.length }
@@ -201,8 +215,13 @@ public struct VariableGeneric<T: NetcdfConvertible> {
     
     /// Write only a defined subset specified by offset and count
     public func write(_ data: [T], offset: [Int], count: [Int]) throws {
-        assert(variable.dimensions.count == offset.count)
-        assert(variable.dimensions.count == count.count)
+        guard variable.dimensions.count == offset.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard variable.dimensions.count == count.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        
         try T.withPointer(to: data) { ptr in
             try variable.varid.put_vara(offset: offset, count: count, ptr: ptr)
         }
@@ -210,9 +229,16 @@ public struct VariableGeneric<T: NetcdfConvertible> {
     
     /// Write only a defined subset specified by offset, count and stride
     public func write(_ data: [T], offset: [Int], count: [Int], stride: [Int]) throws {
-        assert(variable.dimensions.count == offset.count)
-        assert(variable.dimensions.count == count.count)
-        assert(variable.dimensions.count == stride.count)
+        guard variable.dimensions.count == offset.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard variable.dimensions.count == count.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        guard variable.dimensions.count == stride.count else {
+            throw NetCDFError.numberOfDimensionsInvalid
+        }
+        
         try T.withPointer(to: data) { ptr in
             try variable.varid.put_vars(offset: offset, count: count, stride: stride, ptr: ptr)
         }
