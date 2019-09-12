@@ -9,23 +9,35 @@ final class SwiftNetCDFTests: XCTestCase {
     func testCreateSimple() throws {
         let data = (Int32(0)..<50).map{$0}
         
-        let file = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let file = try File.create(path: "test.nc", overwriteExisting: true)
+        try file.setAttribute("TITLE", "My data set")
         
-        let dims = [
+        let dimensions = [
             try file.createDimension(name: "LAT", length: 10),
             try file.createDimension(name: "LON", length: 5)
         ]
         
-        let vari = try file.createVariable(name: "MyData", type: Int32.self, dimensions: dims)
-        try vari.write(data)
+        let variable = try file.createVariable(name: "MyData", type: Int32.self, dimensions: dimensions)
+        try variable.write(data)
         file.sync()
         
         
         // Open the same file again and read the data
         let file2 = try File.open(path: "test.nc", allowWrite: false)
-        let vari2 = file2.getVariable(byName: "MyData")!.asType(Int32.self)!
-        let data2 = try vari2.read()
-        XCTAssertEqual(data, data2)
+        guard let title: String = try file2.getAttribute("TITLE")?.read() else {
+            fatalError("TITLE attribute not available or not a String")
+        }
+        XCTAssertEqual(title, "My data set")
+        
+        guard let variable2 = file2.getVariable(byName: "MyData") else {
+            fatalError("No variable named MyData available")
+        }
+        guard let typedVariable = variable2.asType(Int32.self) else {
+            fatalError("MyData is not a Int32 type")
+        }
+        let data2 = try typedVariable.read(offset: [1,1], count: [2,2])
+        
+        XCTAssertEqual([6, 7, 11, 12], data2)
         
         
         // Compare the CDL notation of this file
