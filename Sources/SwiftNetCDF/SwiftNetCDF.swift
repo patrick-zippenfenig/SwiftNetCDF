@@ -354,9 +354,53 @@ extension Lock {
         }
     }
     
-    func def_var_chunking(ncid: Int32, varid: Int32, chunks: [Int]) throws {
+    func def_var_chunking(ncid: Int32, varid: Int32, type: Chunking, chunks: [Int]) throws {
         try nc_exec {
-            nc_def_var_chunking(ncid, varid, NC_CHUNKED, chunks)
+            return nc_def_var_chunking(ncid, varid, type.netcdfValue, chunks)
+        }
+    }
+    
+    func def_var_flechter32(ncid: Int32, varid: Int32, enable: Bool) throws {
+        try nc_exec {
+            nc_def_var_fletcher32(ncid, varid, enable ? 1 : 0)
+        }
+    }
+    
+    func def_var_endian(ncid: Int32, varid: Int32, type: Endian) throws {
+        try nc_exec {
+            nc_def_var_endian(ncid, varid, type.netcdfValue)
+        }
+    }
+    
+    func def_var_filter(ncid: Int32, varid: Int32, id: UInt32, params: [UInt32]) throws {
+        try nc_exec {
+            nc_def_var_filter(ncid, varid, id, params.count, params)
+        }
+    }
+}
+
+public enum Chunking {
+    case chunked
+    case contingous
+    
+    fileprivate var netcdfValue: Int32 {
+        switch self {
+        case .chunked: return NC_CHUNKED
+        case .contingous: return NC_CONTIGUOUS
+        }
+    }
+}
+
+public enum Endian {
+    case native
+    case little
+    case big
+    
+    fileprivate var netcdfValue: Int32 {
+        switch self {
+        case .native: return NC_ENDIAN_NATIVE
+        case .little: return NC_ENDIAN_LITTLE
+        case .big: return NC_ENDIAN_BIG
         }
     }
 }

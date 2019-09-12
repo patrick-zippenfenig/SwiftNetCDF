@@ -50,15 +50,61 @@ public struct Variable {
         self.numberOfAttributes = 0
     }
     
-    /// enable compression for this netcdf variable. This should be set before any data is written
-    public func enableCompression(level: Int = 6, shuffle: Bool = false, chunks: [Int]? = nil) throws {
-        try netcdfLock.def_var_deflate(ncid: group.ncid, varid: varid, shuffle: shuffle, deflate: true, deflate_level: Int32(level))
-        
-        if let chunks = chunks {
-            precondition(chunks.count == dimensions.count, "Chunk dimensions must have the same amount of elements as variable dimensions")
-            try netcdfLock.def_var_chunking(ncid: group.ncid, varid: varid, chunks: chunks)
-        }
+    /**
+     Set the compression settings for a netCDF-4/HDF5 variable.
+     
+     This function must be called after nc_def_var and before nc_enddef or any functions which writes data to the file.
+     
+     Deflation and shuffline require chunked data. If this function is called on a variable with contiguous data, then the data is changed to chunked data, with default chunksizes. Use defineChunks() to tune performance with user-defined chunksizes.
+     
+     If this function is called on a scalar variable, it is ignored.
+     */
+    public func defineCompression(enable: Bool, level: Int = 6, shuffle: Bool = false) throws {
+        try netcdfLock.def_var_deflate(ncid: group.ncid, varid: varid, shuffle: shuffle, deflate: enable, deflate_level: Int32(level))
     }
+    
+
+    /**
+     Define chunking parameters for a variable.
+     
+     The function nc_def_var_chunking sets the chunking parameters for a variable in a netCDF-4 file. It can set the chunk sizes to get chunked storage, or it can set the contiguous flag to get contiguous storage.
+     
+     The total size of a chunk must be less than 4 GiB. That is, the product of all chunksizes and the size of the data (or the size of nc_vlen_t for VLEN types) must be less than 4 GiB.
+     
+     This function may only be called after the variable is defined, but before nc_enddef is called. Once the chunking parameters are set for a variable, they cannot be changed.
+     
+     Note that this does not work for scalar variables. Only non-scalar variables can have chunking.
+     */
+    public func defineChunks(chunking: Chunking, chunks: [Int]) throws {
+        precondition(chunks.count == dimensions.count, "Chunk dimensions must have the same amount of elements as variable dimensions")
+        try netcdfLock.def_var_chunking(ncid: group.ncid, varid: varid, type: chunking, chunks: chunks)
+    }
+    
+    
+    public func defineChecksuming(enable: Bool) throws {
+        try netcdfLock.def_var_flechter32(ncid: group.ncid, varid: varid, enable: enable)
+    }
+    
+    /**
+     Define endianness of a variable.
+     
+     With this function the endianness (i.e. order of bits in integers) can be changed on a per-variable basis. By default, the endianness is the same as the default endianness of the platform. But with nc_def_var_endianness the endianness can be explicitly set for a variable.
+     
+     Warning: this function is only defined if the type of the variable is an atomic integer or float type.
+     
+     This function may only be called after the variable is defined, but before nc_enddef is called.
+     */
+    public func defineEndian(endian: Endian) throws {
+        try netcdfLock.def_var_endian(ncid: group.ncid, varid: varid, type: endian)
+    }
+    
+    /**
+     Define a new variable filter.
+     */
+    public func defineFilter(id: UInt32, params: [UInt32]) throws {
+        try netcdfLock.def_var_filter(ncid: group.ncid, varid: varid, id: id, params: params)
+    }
+    
     
     /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
     public func asType<T: NetcdfConvertible>(_ of: T.Type) -> VariableGeneric<T>? {
