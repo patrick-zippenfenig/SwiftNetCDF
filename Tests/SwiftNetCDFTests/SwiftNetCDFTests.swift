@@ -41,19 +41,65 @@ group: / {
         XCTAssertEqual(cdl, try file2.getCdl())
     }
     
+    /**
+     Write and read all attribute data-types
+     */
     func testAttributes() throws {
+        let data_float = [Float(42), 34, 123]
         let file = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
-        try file.setAttribute("TEST1", Float(42))
-        let attr1: Float = try file.getAttribute("TEST1")!.read()!
-        XCTAssertEqual(attr1, 42)
+        try file.setAttribute("TEST_FLOAT", data_float)
+        XCTAssertEqual(try file.getAttribute("TEST_FLOAT")!.read(), data_float)
         
-        try file.setAttribute("TEST2", "42")
-        let attr2: String = try file.getAttribute("TEST2")!.read()!
-        XCTAssertEqual(attr2, "42")
+        let data_float_nan = [Float.nan, Float.infinity, Float.signalingNaN]
+        try file.setAttribute("TEST_FLOAT_NAN", data_float_nan)
+        let data_nan = try file.getAttribute("TEST_FLOAT_NAN")!.read()! as [Float]
+        XCTAssertTrue(data_nan[0].isNaN)
+        XCTAssertTrue(data_nan[1].isInfinite)
+        XCTAssertTrue(data_nan[2].isSignalingNaN)
         
-        try file.setAttribute("TEST3", ["123","345","678"])
-        let attr3: [String] = try file.getAttribute("TEST3")!.read()!
-        XCTAssertEqual(attr3, ["123","345","678"])
+        let data_double = [123.2,127.23,-127.32]
+        try file.setAttribute("TEST_DOUBLE", data_double)
+        XCTAssertEqual(try file.getAttribute("TEST_DOUBLE")!.read(), data_double)
+        
+        let data_string = ["123","345","678"]
+        try file.setAttribute("TEST_STRING", data_string)
+        XCTAssertEqual(try file.getAttribute("TEST_STRING")!.read(), data_string)
+        
+        
+        // Signed integers
+        let data_int8 = [Int8(123),127,-127]
+        try file.setAttribute("TEST_INT8", data_int8)
+        XCTAssertEqual(try file.getAttribute("TEST_INT8")!.read(), data_int8)
+        
+        let data_int16 = [Int16(1263),1627,.min,.max]
+        try file.setAttribute("TEST_INT16", data_int16)
+        XCTAssertEqual(try file.getAttribute("TEST_INT16")!.read(), data_int16)
+        
+        let data_int32 = [Int32(12653),16627,-12767,.min,.max]
+        try file.setAttribute("TEST_INT32", data_int32)
+        XCTAssertEqual(try file.getAttribute("TEST_INT32")!.read(), data_int32)
+        
+        let data_int = [123,345,-678,.min,.max]
+        try file.setAttribute("TEST_INT64", data_int)
+        XCTAssertEqual(try file.getAttribute("TEST_INT64")!.read(), data_int)
+        
+
+        // Unsigned integers
+        let data_uint8 = [UInt8(123),127,.min,.max]
+        try file.setAttribute("TEST_UINT8", data_uint8)
+        XCTAssertEqual(try file.getAttribute("TEST_UINT8")!.read(), data_uint8)
+        
+        let data_uint16 = [UInt16(1263),1627,.min,.max]
+        try file.setAttribute("TEST_UINT16", data_uint16)
+        XCTAssertEqual(try file.getAttribute("TEST_UINT16")!.read(), data_uint16)
+        
+        let data_uint32 = [UInt32(12653),16627,.min,.max]
+        try file.setAttribute("TEST_UINT32", data_uint32)
+        XCTAssertEqual(try file.getAttribute("TEST_UINT32")!.read(), data_uint32)
+        
+        let data_uint = [UInt(123),345,678,.min,.max]
+        try file.setAttribute("TEST_UINT64", data_uint)
+        XCTAssertEqual(try file.getAttribute("TEST_UINT64")!.read(), data_uint)
     }
     
     func testExample() {
