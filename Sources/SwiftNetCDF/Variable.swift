@@ -112,6 +112,17 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         }
     }
     
+    public func read(offset: [Int], count: [Int], stride: [Int]) throws -> [T] {
+        assert(offset.count == variable.dimensions.count)
+        assert(count.count == variable.dimensions.count)
+        assert(stride.count == variable.dimensions.count)
+        let n_elements = count.reduce(1, *)
+        
+        return try T.createFromBuffer(length: n_elements) { ptr in
+            try netcdfLock.get_vars(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, stride: stride, buffer: ptr)
+        }
+    }
+    
     /// Read the whole variable
     public func read() throws -> [T] {
         let offset = [Int](repeating: 0, count: variable.dimensions.count)
@@ -134,6 +145,16 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         assert(variable.dimensions.count == count.count)
         try T.withPointer(to: data) { ptr in
             try netcdfLock.put_vara(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, ptr: ptr)
+        }
+    }
+    
+    /// Write only a defined subset specified by offset, count and stride
+    public func write(_ data: [T], offset: [Int], count: [Int], stride: [Int]) throws {
+        assert(variable.dimensions.count == offset.count)
+        assert(variable.dimensions.count == count.count)
+        assert(variable.dimensions.count == stride.count)
+        try T.withPointer(to: data) { ptr in
+            try netcdfLock.put_vars(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, stride: stride, ptr: ptr)
         }
     }
 }

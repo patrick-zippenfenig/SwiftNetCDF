@@ -329,9 +329,21 @@ extension Lock {
             nc_get_vara(ncid, varid, offset, count, buffer)
         }
     }
+    
+    func get_vars(ncid: Int32, varid: Int32, offset: [Int], count: [Int], stride: [Int], buffer: UnsafeMutableRawPointer) throws {
+        try nc_exec {
+            nc_get_vars(ncid, varid, offset, count, stride, buffer)
+        }
+    }
+    
     func put_vara(ncid: Int32, varid: Int32, offset: [Int], count: [Int], ptr: UnsafeRawPointer) throws {
         try nc_exec {
             nc_put_vara(ncid, varid, offset, count, ptr)
+        }
+    }
+    func put_vars(ncid: Int32, varid: Int32, offset: [Int], count: [Int], stride: [Int], ptr: UnsafeRawPointer) throws {
+        try nc_exec {
+            nc_put_vars(ncid, varid, offset, count, stride, ptr)
         }
     }
 }
