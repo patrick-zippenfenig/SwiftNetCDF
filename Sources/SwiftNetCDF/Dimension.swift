@@ -9,13 +9,13 @@ import Foundation
 
 /// Information about a dimension
 public struct Dimension {
-    let dimid: DimId
-    let name: String
+    public let dimid: DimId
+    public let name: String
     
     /// length my be updated for unlimited dimensions
-    let length: Int
+    public let length: Int
     
-    let isUnlimited: Bool
+    public let isUnlimited: Bool
     
     /**
      Initialise from existing dimension ID. isUlimited must be supplied, because it can not be self discovered.

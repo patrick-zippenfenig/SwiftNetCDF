@@ -39,7 +39,7 @@ public final class Group {
     }
     
     /// Return the (CDL Common Data Language) representation
-    func getCdl(headerOnly: Bool = true, indent: Int = 0) -> String {
+    public func getCdl(headerOnly: Bool = true, indent: Int = 0) -> String {
         var out = ""
         let ind = String(repeating: " ", count: indent)
         let dimensions = getDimensions()

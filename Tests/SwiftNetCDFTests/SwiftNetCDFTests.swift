@@ -1,5 +1,5 @@
 import XCTest
-@testable import SwiftNetCDF
+/*@testable*/ import SwiftNetCDF
 
 final class SwiftNetCDFTests: XCTestCase {
     /**

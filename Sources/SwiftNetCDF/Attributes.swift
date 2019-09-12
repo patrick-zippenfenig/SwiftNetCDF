@@ -52,10 +52,10 @@ extension AttributeProvider {
 
 /// A single attribute of a group or variable.
 public struct Attribute<Parent: AttributeProvider> {
-    let parent: Parent
-    let name: String
-    let type: DataType
-    let length: Int
+    public let parent: Parent
+    public let name: String
+    public let type: DataType
+    public let length: Int
     
     /// Try to initialise from a name. Nil if the attributes does not exist
     fileprivate init?(fromExistingName name: String, parent: Parent) throws {

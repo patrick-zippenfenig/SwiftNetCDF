@@ -10,12 +10,12 @@ import Foundation
 /// A netcdf variable of unspecified type
 public struct Variable {
     public let group: Group
-    let name: String
+    public let name: String
     public let varid: VarId
-    let dimensions: [Dimension]
-    let dataType: DataType
+    public let dimensions: [Dimension]
+    public let dataType: DataType
     
-    var count: Int { return dimensions.reduce(1, {$0 * $1.length}) }
+    public var count: Int { return dimensions.reduce(1, {$0 * $1.length}) }
     
     /**
      Initialise from an existing variable id
@@ -158,7 +158,9 @@ extension Variable: AttributeProvider {
 
 /// A generic netcdf variable of a fixed data type
 public struct VariableGeneric<T: NetcdfConvertible> {
-    let variable: Variable
+    /// TODO functions should also be exposed to Variable generic
+    
+    public let variable: Variable
     
     public func read(offset: [Int], count: [Int]) throws -> [T] {
         assert(offset.count == variable.dimensions.count)
