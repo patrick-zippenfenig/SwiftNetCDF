@@ -47,14 +47,137 @@ public struct TypeId: Equatable {
     }
 }
 
+/**
+ A VarId is always bound to a NcId. We make sure this stays this way.
+ */
 public struct VarId {
+    let ncid: NcId
     let varid: Int32
     
-    fileprivate init(_ varid: Int32) {
+    fileprivate init(ncid: NcId, varid: Int32) {
+        self.ncid = ncid
         self.varid = varid
     }
     
+    public func inq_var() throws -> (name: String, typeid: TypeId, dimensionIds: [DimId], nAttributes: Int32) {
+        let nDimensions = try inq_varndims()
+        var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
+        var nAttribudes: Int32 = 0
+        var typeid: Int32 = 0
+        let name = try Nc.execWithStringBuffer {
+            nc_inq_var(ncid.ncid, varid, $0, &typeid, nil, &dimensionIds, &nAttribudes)
+        }
+        return (name, TypeId(typeid), dimensionIds.map(DimId.init), nAttribudes)
+    }
+    
+    public func inq_attname(attid: Int32) throws -> String {
+        return try Nc.execWithStringBuffer {
+            nc_inq_attname(ncid.ncid, varid, attid, $0)
+        }
+    }
+    
+    public func inq_att(name: String) throws -> (typeid: TypeId, length: Int) {
+        var typeid: Int32 = 0
+        var len: Int = 0
+        try Nc.exec {
+            nc_inq_att(ncid.ncid, varid, name, &typeid, &len)
+        }
+        return (TypeId(typeid), len)
+    }
+    
+    
+    /// Get all variable IDs of a group id
+    public func inq_varndims() throws -> Int32 {
+        var count: Int32 = 0
+        try Nc.exec {
+            nc_inq_varndims(ncid.ncid, varid, &count)
+        }
+        return count
+    }
+    
+    public func put_att(name: String, type: TypeId, length: Int, ptr: UnsafeRawPointer) throws {
+        try Nc.exec {
+            nc_put_att(ncid.ncid, varid, name, type.typeid, length, ptr)
+        }
+    }
+    
+    public func put_att_text(name: String, length: Int, text: String) throws {
+        try Nc.exec {
+            nc_put_att_text(ncid.ncid, varid, name, length, text)
+        }
+    }
+    
+    public func inq_attlen(name: String) throws -> Int {
+        var len: Int = 0
+        try Nc.exec {
+            nc_inq_attlen(ncid.ncid, varid, name, &len)
+        }
+        return len
+    }
+    
+    public func get_att(name: String, buffer: UnsafeMutableRawPointer) throws {
+        try Nc.exec {
+            nc_get_att(ncid.ncid, varid, name, buffer)
+        }
+    }
+    
+    
+    public func get_vara(offset: [Int], count: [Int], buffer: UnsafeMutableRawPointer) throws {
+        try Nc.exec {
+            nc_get_vara(ncid.ncid, varid, offset, count, buffer)
+        }
+    }
+    
+    public func get_vars(offset: [Int], count: [Int], stride: [Int], buffer: UnsafeMutableRawPointer) throws {
+        try Nc.exec {
+            nc_get_vars(ncid.ncid, varid, offset, count, stride, buffer)
+        }
+    }
+    
+    public func put_vara(offset: [Int], count: [Int], ptr: UnsafeRawPointer) throws {
+        try Nc.exec {
+            nc_put_vara(ncid.ncid, varid, offset, count, ptr)
+        }
+    }
+    
+    public func put_vars(offset: [Int], count: [Int], stride: [Int], ptr: UnsafeRawPointer) throws {
+        try Nc.exec {
+            nc_put_vars(ncid.ncid, varid, offset, count, stride, ptr)
+        }
+    }
+    
+    public func def_var_deflate(shuffle: Bool, deflate: Bool, deflate_level: Int32) throws {
+        try Nc.exec {
+            nc_def_var_deflate(ncid.ncid, varid, shuffle ? 1 : 0, deflate ? 1 : 0, deflate_level)
+        }
+    }
+    
+    public func def_var_chunking(type: Chunking, chunks: [Int]) throws {
+        try Nc.exec {
+            return nc_def_var_chunking(ncid.ncid, varid, type.netcdfValue, chunks)
+        }
+    }
+    
+    public func def_var_flechter32(enable: Bool) throws {
+        try Nc.exec {
+            nc_def_var_fletcher32(ncid.ncid, varid, enable ? 1 : 0)
+        }
+    }
+    
+    public func def_var_endian(type: Endian) throws {
+        try Nc.exec {
+            nc_def_var_endian(ncid.ncid, varid, type.netcdfValue)
+        }
+    }
+    
+    public func def_var_filter(id: UInt32, params: [UInt32]) throws {
+        try Nc.exec {
+            nc_def_var_filter(ncid.ncid, varid, id, params.count, params)
+        }
+    }
 }
+
+
 
 public struct DimId: Equatable {
     let dimid: Int32
@@ -62,8 +185,23 @@ public struct DimId: Equatable {
     fileprivate init(_ dimid: Int32) {
         self.dimid = dimid
     }
+    
+    public enum Length {
+        case unlimited
+        case length(Int)
+        
+        var netCdfValue: Int {
+            switch self {
+            case .unlimited: return NC_UNLIMITED
+            case .length(let length): return length
+            }
+        }
+    }
 }
 
+/**
+ A ncid might be a file or a group handle.
+ */
 public struct NcId {
     let ncid: Int32
     
@@ -71,6 +209,14 @@ public struct NcId {
         self.ncid = ncid
     }
     
+    /**
+     A global var is used for global attributes on ncid
+     */
+    func NC_GLOBAL() -> VarId {
+        return VarId(ncid: self, varid: CNetCDF.NC_GLOBAL)
+    }
+    
+    /// Get information on a type. Works for external and user types
     public func inq_type(typeid: TypeId) throws -> (name: String, size: Int) {
         var size = 0
         let name = try Nc.execWithStringBuffer {
@@ -79,7 +225,8 @@ public struct NcId {
         return (name, size)
     }
     
-    public func inq_user_type(typeid: TypeId) throws -> (name: String, size: Int, baseTypeId: Int32, numberOfFields: Int, classType: Int32) {
+    /// Get information on user types. Does not work for external types
+    public func inq_user_type(typeid: TypeId) throws -> (name: String, size: Int, baseTypeId: TypeId, numberOfFields: Int, classType: Int32) {
         var size = 0
         var baseTypeId: Int32 = 0
         var numberOfFields = 0
@@ -87,15 +234,24 @@ public struct NcId {
         let name = try Nc.execWithStringBuffer {
             nc_inq_user_type(ncid, typeid.typeid, $0, &size, &baseTypeId, &numberOfFields, &classType)
         }
-        return (name, size, baseTypeId, numberOfFields, classType)
+        return (name, size, TypeId(baseTypeId), numberOfFields, classType)
     }
     
+    /// Sync to disk
     public func sync() throws {
         try Nc.exec {
             nc_sync(ncid)
         }
     }
     
+    /// Close the netcdf file
+    public func close() throws {
+        try Nc.exec {
+            nc_close(ncid)
+        }
+    }
+    
+    /// Numer of attributes for this ncid
     public func inq_natts() throws -> Int32 {
         var count: Int32 = 0
         try Nc.exec {
@@ -114,10 +270,10 @@ public struct NcId {
         try Nc.exec {
             nc_inq_varids(ncid, nil, &ids)
         }
-        return ids.map(VarId.init)
+        return ids.map { VarId(ncid: self, varid: $0) }
     }
     
-    /// Get the name of a group
+    /// Get the name of this group
     public func inq_grpname() throws -> String {
         var nameLength = 0
         try Nc.exec {
@@ -130,7 +286,7 @@ public struct NcId {
         return String(cString: nameBuffer)
     }
     
-    /// Define a new group
+    /// Define a new sub group
     public func def_grp(name: String) throws -> NcId {
         var newNcid: Int32 = 0
         try Nc.exec {
@@ -143,10 +299,10 @@ public struct NcId {
     public func inq_varid(name: String) throws -> VarId {
         var id: Int32 = 0
         try Nc.exec { nc_inq_varid(ncid, name, &id) }
-        return VarId(id)
+        return VarId(ncid: self, varid: id)
     }
     
-    /// Get all group IDs of a group id
+    /// Get all sub group IDs
     public func inq_grps() throws -> [NcId] {
         var count: Int32 = 0
         try Nc.exec {
@@ -159,19 +315,11 @@ public struct NcId {
         return ids.map(NcId.init)
     }
     
-    
     /// Get a group by name
     public func inq_grp_ncid(name: String) throws -> NcId {
         var id: Int32 = 0
         try Nc.exec { nc_inq_grp_ncid(ncid, name, &id) }
         return NcId(id)
-    }
-    
-    /// Close the netcdf file
-    public func close() throws {
-        try Nc.exec {
-            nc_close(ncid)
-        }
     }
     
     /**
@@ -192,16 +340,8 @@ public struct NcId {
         }
         return dimensions.map(DimId.init)
     }
-    
-    /// Get all variable IDs of a group id
-    public func inq_varndims(varid: VarId) throws -> Int32 {
-        var count: Int32 = 0
-        try Nc.exec {
-            nc_inq_varndims(ncid, varid.varid, &count)
-        }
-        return count
-    }
-    
+
+    /// List all Dimension ids of this ncid
     public func inq_dimids(includeParents: Bool) throws -> [DimId] {
         // Get the number of dimensions
         var count: Int32 = 0
@@ -216,26 +356,7 @@ public struct NcId {
         return ids.map(DimId.init)
     }
     
-    
-    public func inq_var(varid: VarId) throws -> (name: String, typeid: TypeId, dimensionIds: [DimId], nAttributes: Int32) {
-        let nDimensions = try inq_varndims(varid: varid)
-        var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
-        var nAttribudes: Int32 = 0
-        var typeid: Int32 = 0
-        let name = try Nc.execWithStringBuffer {
-            nc_inq_var(ncid, varid.varid, $0, &typeid, nil, &dimensionIds, &nAttribudes)
-        }
-        return (name, TypeId(typeid), dimensionIds.map(DimId.init), nAttribudes)
-    }
-    
-    public func def_var( name: String, typeid: TypeId, dimensionIds: [DimId]) throws -> VarId {
-        var varid: Int32 = 0
-        try Nc.exec {
-            nc_def_var(ncid, name, typeid.typeid, Int32(dimensionIds.count), dimensionIds.map{$0.dimid}, &varid)
-        }
-        return VarId(varid)
-    }
-    
+    /// Get name and length of a dimension
     public func inq_dim(dimid: DimId) throws -> (name: String, length: Int) {
         var len: Int = 0
         let name = try Nc.execWithStringBuffer {
@@ -244,108 +365,22 @@ public struct NcId {
         return (name, len)
     }
     
-    public func def_dim(name: String, length: Int) throws -> DimId {
+    /// Define a new dimension
+    public func def_dim(name: String, length: DimId.Length) throws -> DimId {
         var dimid: Int32 = 0
         try Nc.exec {
-            nc_def_dim(ncid, name, length, &dimid)
+            nc_def_dim(ncid, name, length.netCdfValue, &dimid)
         }
         return DimId(dimid)
     }
     
-    public func inq_attname(varid: VarId, attid: Int32) throws -> String {
-        return try Nc.execWithStringBuffer {
-            nc_inq_attname(ncid, varid.varid, attid, $0)
-        }
-    }
-    
-    public func inq_att(varid: VarId, name: String) throws -> (typeid: TypeId, length: Int) {
-        var typeid: Int32 = 0
-        var len: Int = 0
+    /// Define a new variable
+    public func def_var( name: String, typeid: TypeId, dimensionIds: [DimId]) throws -> VarId {
+        var varid: Int32 = 0
         try Nc.exec {
-            nc_inq_att(ncid, varid.varid, name, &typeid, &len)
+            nc_def_var(ncid, name, typeid.typeid, Int32(dimensionIds.count), dimensionIds.map{$0.dimid}, &varid)
         }
-        return (TypeId(typeid), len)
-    }
-    
-    public func put_att(varid: VarId, name: String, type: TypeId, length: Int, ptr: UnsafeRawPointer) throws {
-        try Nc.exec {
-            nc_put_att(ncid, varid.varid, name, type.typeid, length, ptr)
-        }
-    }
-    
-    public func put_att_text(varid: VarId, name: String, length: Int, text: String) throws {
-        try Nc.exec {
-            nc_put_att_text(ncid, varid.varid, name, length, text)
-        }
-    }
-    
-    
-    public func inq_attlen(varid: VarId, name: String) throws -> Int {
-        var len: Int = 0
-        try Nc.exec {
-            nc_inq_attlen(ncid, varid.varid, name, &len)
-        }
-        return len
-    }
-    
-    public func get_att(varid: VarId, name: String, buffer: UnsafeMutableRawPointer) throws {
-        try Nc.exec {
-            nc_get_att(ncid, varid.varid, name, buffer)
-        }
-    }
-    
-    
-    public func get_vara(varid: VarId, offset: [Int], count: [Int], buffer: UnsafeMutableRawPointer) throws {
-        try Nc.exec {
-            nc_get_vara(ncid, varid.varid, offset, count, buffer)
-        }
-    }
-    
-    public func get_vars(varid: VarId, offset: [Int], count: [Int], stride: [Int], buffer: UnsafeMutableRawPointer) throws {
-        try Nc.exec {
-            nc_get_vars(ncid, varid.varid, offset, count, stride, buffer)
-        }
-    }
-    
-    public func put_vara(varid: VarId, offset: [Int], count: [Int], ptr: UnsafeRawPointer) throws {
-        try Nc.exec {
-            nc_put_vara(ncid, varid.varid, offset, count, ptr)
-        }
-    }
-    public func put_vars(varid: VarId, offset: [Int], count: [Int], stride: [Int], ptr: UnsafeRawPointer) throws {
-        try Nc.exec {
-            nc_put_vars(ncid, varid.varid, offset, count, stride, ptr)
-        }
-    }
-    
-    public func def_var_deflate(varid: VarId, shuffle: Bool, deflate: Bool, deflate_level: Int32) throws {
-        try Nc.exec {
-            nc_def_var_deflate(ncid, varid.varid, shuffle ? 1 : 0, deflate ? 1 : 0, deflate_level)
-        }
-    }
-    
-    public func def_var_chunking(varid: VarId, type: Chunking, chunks: [Int]) throws {
-        try Nc.exec {
-            return nc_def_var_chunking(ncid, varid.varid, type.netcdfValue, chunks)
-        }
-    }
-    
-    public func def_var_flechter32(varid: VarId, enable: Bool) throws {
-        try Nc.exec {
-            nc_def_var_fletcher32(ncid, varid.varid, enable ? 1 : 0)
-        }
-    }
-    
-    public func def_var_endian(varid: VarId, type: Endian) throws {
-        try Nc.exec {
-            nc_def_var_endian(ncid, varid.varid, type.netcdfValue)
-        }
-    }
-    
-    public func def_var_filter(varid: VarId, id: UInt32, params: [UInt32]) throws {
-        try Nc.exec {
-            nc_def_var_filter(ncid, varid.varid, id, params.count, params)
-        }
+        return VarId(ncid: self, varid: varid)
     }
 }
 
@@ -393,10 +428,6 @@ public struct Nc {
 }
 
 public extension Nc {
-    static var NC_UNLIMITED: Int { return CNetCDF.NC_UNLIMITED }
-    
-    static var NC_GLOBAL: VarId { return VarId(CNetCDF.NC_GLOBAL) }
-    
     /**
      NetCDF library version string like: "4.6.3 of May  8 2019 00:09:03 $"
      */
@@ -406,6 +437,7 @@ public extension Nc {
         }
     }
     
+    /// Open an exsiting NetCDF file
     static func open(path: String, omode: Int32) throws -> NcId {
         var ncid: Int32 = 0
         try exec {
@@ -414,10 +446,12 @@ public extension Nc {
         return NcId(ncid)
     }
     
+    /// Open an exsiting NetCDF file
     static func open(path: String, allowWrite: Bool) throws -> NcId {
         return try open(path: path, omode: allowWrite ? NC_WRITE : 0)
     }
     
+    /// Create a new NetCDF file
     static func create(path: String, cmode: Int32) throws -> NcId {
         var ncid: Int32 = 0
         try exec {
@@ -426,6 +460,7 @@ public extension Nc {
         return NcId(ncid)
     }
     
+    /// Create a new NetCDF file
     static func create(path: String, overwriteExisting: Bool, useNetCDF4: Bool) throws -> NcId {
         var cmode = Int32(0)
         if overwriteExisting == false {
@@ -437,14 +472,13 @@ public extension Nc {
         return try create(path: path, cmode: cmode)
     }
     
-
+    /// Free memory for returned string arrays
     static func free_string(len: Int, stringArray: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>) {
         /// no error should be possible
         try! exec {
             nc_free_string(len, stringArray)
         }
     }
-    
 }
 
 public enum Chunking {

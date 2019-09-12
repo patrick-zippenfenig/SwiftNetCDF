@@ -24,7 +24,7 @@ public struct Variable {
      Initialise from an existing variable id
      */
     init(fromVarId varid: VarId, group: Group) throws {
-        let varinq = try group.ncid.inq_var(varid: varid)
+        let varinq = try varid.inq_var()
         let unlimitedDimensions = try group.ncid.inq_unlimdims()
         self.group = group
         self.varid = varid
@@ -70,7 +70,7 @@ public struct Variable {
         - ...
      */
     public func defineDeflate(enable: Bool, level: Int = 6, shuffle: Bool = false) throws {
-        try group.ncid.def_var_deflate(varid: varid, shuffle: shuffle, deflate: enable, deflate_level: Int32(level))
+        try varid.def_var_deflate(shuffle: shuffle, deflate: enable, deflate_level: Int32(level))
     }
     
 
@@ -87,7 +87,7 @@ public struct Variable {
      */
     public func defineChunking(chunking: Chunking, chunks: [Int]) throws {
         precondition(chunks.count == dimensions.count, "Chunk dimensions must have the same amount of elements as variable dimensions")
-        try group.ncid.def_var_chunking(varid: varid, type: chunking, chunks: chunks)
+        try varid.def_var_chunking(type: chunking, chunks: chunks)
     }
     
     /**
@@ -98,7 +98,7 @@ public struct Variable {
      Checksums require chunked data. If this function is called on a variable with contiguous data, then the data is changed to chunked data, with default chunksizes. Use nc_def_var_chunking() to tune performance with user-defined chunksizes.
      */
     public func defineChecksuming(enable: Bool) throws {
-        try group.ncid.def_var_flechter32(varid: varid, enable: enable)
+        try varid.def_var_flechter32(enable: enable)
     }
     
     /**
@@ -111,14 +111,14 @@ public struct Variable {
      This function may only be called after the variable is defined, but before nc_enddef is called.
      */
     public func defineEndian(endian: Endian) throws {
-        try group.ncid.def_var_endian(varid: varid, type: endian)
+        try varid.def_var_endian(type: endian)
     }
     
     /**
      Define a new variable filter.
      */
     public func defineFilter(id: UInt32, params: [UInt32]) throws {
-        try group.ncid.def_var_filter(varid: varid, id: id, params: params)
+        try varid.def_var_filter(id: id, params: params)
     }
     
     
@@ -165,7 +165,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         let n_elements = count.reduce(1, *)
         
         return try T.createFromBuffer(length: n_elements) { ptr in
-            try variable.group.ncid.get_vara(varid: variable.varid, offset: offset, count: count, buffer: ptr)
+            try variable.varid.get_vara(offset: offset, count: count, buffer: ptr)
         }
     }
     
@@ -176,7 +176,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         let n_elements = count.reduce(1, *)
         
         return try T.createFromBuffer(length: n_elements) { ptr in
-            try variable.group.ncid.get_vars(varid: variable.varid, offset: offset, count: count, stride: stride, buffer: ptr)
+            try variable.varid.get_vars(offset: offset, count: count, stride: stride, buffer: ptr)
         }
     }
     
@@ -201,7 +201,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         assert(variable.dimensions.count == offset.count)
         assert(variable.dimensions.count == count.count)
         try T.withPointer(to: data) { ptr in
-            try variable.group.ncid.put_vara(varid: variable.varid, offset: offset, count: count, ptr: ptr)
+            try variable.varid.put_vara(offset: offset, count: count, ptr: ptr)
         }
     }
     
@@ -211,7 +211,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         assert(variable.dimensions.count == count.count)
         assert(variable.dimensions.count == stride.count)
         try T.withPointer(to: data) { ptr in
-            try variable.group.ncid.put_vars(varid: variable.varid, offset: offset, count: count, stride: stride, ptr: ptr)
+            try variable.varid.put_vars(offset: offset, count: count, stride: stride, ptr: ptr)
         }
     }
 }

@@ -135,7 +135,7 @@ public final class Group {
 
 extension Group: AttributeProvider {
     public var varid: VarId {
-        return Nc.NC_GLOBAL
+        return ncid.NC_GLOBAL()
     }
     
     public var group: Group {

@@ -21,7 +21,7 @@ public protocol AttributeProvider {
 extension AttributeProvider {
     public func getAttributes() throws -> [Attribute<Self>] {
         return try (0..<numberOfAttributes).map {
-            try getAttribute(try group.ncid.inq_attname(varid: varid, attid: $0))!
+            try getAttribute(try varid.inq_attname(attid: $0))!
         }
     }
     
@@ -42,7 +42,7 @@ extension AttributeProvider {
     
     /// Set a netcdf attribute from raw pointer type
     public func setAttributeRaw(name: String, type: DataType, length: Int, ptr: UnsafeRawPointer) throws {
-        try group.ncid.put_att(varid: varid, name: name, type: type.typeid, length: length, ptr: ptr)
+        try varid.put_att(name: name, type: type.typeid, length: length, ptr: ptr)
     }
 }
 
@@ -54,7 +54,7 @@ public struct Attribute<Parent: AttributeProvider> {
     
     init?(fromExistingName name: String, parent: Parent) throws {
         do {
-            let attinq = try parent.group.ncid.inq_att(varid: parent.varid, name: name)
+            let attinq = try parent.varid.inq_att(name: name)
             self.parent = parent
             self.length = attinq.length
             self.type = try DataType(fromTypeId: attinq.typeid, group: parent.group)
@@ -80,7 +80,7 @@ public struct Attribute<Parent: AttributeProvider> {
     
     /// Read the raw into a prepared pointer
     public func readRaw(into buffer: UnsafeMutableRawPointer) throws {
-        try parent.group.ncid.get_att(varid: parent.varid, name: name, buffer: buffer)
+        try parent.varid.get_att(name: name, buffer: buffer)
     }
     
     public func to<T: NetcdfConvertible>(type _: T.Type) -> AttributeGeneric<T>? {

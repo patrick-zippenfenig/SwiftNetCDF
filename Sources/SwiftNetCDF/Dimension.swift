@@ -37,7 +37,7 @@ public struct Dimension {
      TODO: Consider using a enum for length or unlimited
      */
     init(group: Group, name: String, length: Int, isUnlimited: Bool) throws {
-        self.dimid = try group.ncid.def_dim(name: name, length: isUnlimited ? Nc.NC_UNLIMITED : length)
+        self.dimid = try group.ncid.def_dim(name: name, length: isUnlimited ? .unlimited : .length(length))
         self.name = name
         self.length = length
         self.isUnlimited = isUnlimited
