@@ -318,8 +318,9 @@ extension Lock {
         }
     }
     
-    func free_string(len: Int, stringArray: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>) throws {
-        try nc_exec {
+    func free_string(len: Int, stringArray: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>) {
+        /// no error should be possible
+        try! nc_exec {
             nc_free_string(len, stringArray)
         }
     }

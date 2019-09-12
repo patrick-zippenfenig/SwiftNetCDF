@@ -160,15 +160,31 @@ extension String: NetcdfConvertible {
         var pointers = [UnsafeMutablePointer<Int8>?](repeating: nil, count: length)
         try fn(&pointers)
         let strings = pointers.map { String(cString: $0!) }
-        try netcdfLock.free_string(len: length, stringArray: &pointers)
+        netcdfLock.free_string(len: length, stringArray: &pointers)
         return strings
     }
     
     public static func withPointer(to: [String], fn: (UnsafeRawPointer) throws -> ()) throws {
+        var pointers = [UnsafeRawPointer]()
+        pointers.reserveCapacity(to.count)
+        
+        // Recursively call withCString until we have all pointer -> stack size may limit string array length
+        func mapRecursive(i: Int, fn: (UnsafeRawPointer) throws -> ()) throws {
+            if i == to.count {
+                try fn(pointers)
+                return
+            }
+            try to[i].withCString { ptr in
+                pointers.append(ptr)
+                try mapRecursive(i: i+1, fn: fn)
+            }
+        }
+        try mapRecursive(i: 0, fn: fn)
+        
         /// Cast data to a C string and then prepare an array of pointer
-        let cStrings = to.map { $0.cString(using: .utf8)! }
-        let pointers = cStrings.map { $0.withUnsafeBytes { $0.baseAddress! } }
-        try fn(pointers)
+        //let cStrings = to.map { $0.cString(using: .utf8)! }
+        //let pointers = cStrings.map { $0.withUnsafeBytes { $0.baseAddress! } }
+        //try fn(pointers)
     }
 }
 
