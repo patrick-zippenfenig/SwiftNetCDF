@@ -159,7 +159,7 @@ extension String: NetcdfConvertible {
         var pointers = [UnsafeMutablePointer<Int8>?](repeating: nil, count: length)
         try fn(&pointers)
         let strings = pointers.map { String(cString: $0!) }
-        netcdfLock.free_string(len: length, stringArray: &pointers)
+        Nc.free_string(len: length, stringArray: &pointers)
         return strings
     }
     

@@ -35,7 +35,7 @@ public enum DataType {
             return
         }
         
-        let typeInq = try netcdfLock.inq_user_type(ncid: group.ncid, typeid: typeid)
+        let typeInq = try Nc.inq_user_type(ncid: group.ncid, typeid: typeid)
         // TODO switch user types
         fatalError()
         

@@ -9,12 +9,12 @@ import Foundation
 
 public final class File {
     static func create(file: String, overwriteExisting: Bool, useNetCDF4: Bool = true) throws -> Group {
-        let ncid = try netcdfLock.create(path: file, overwriteExisting: overwriteExisting, useNetCDF4: useNetCDF4)
+        let ncid = try Nc.create(path: file, overwriteExisting: overwriteExisting, useNetCDF4: useNetCDF4)
         return try Group(ncid: ncid, parent: nil)
     }
     
     static func open(file: String, allowWrite: Bool) throws -> Group {
-        let ncid = try netcdfLock.open(path: file, allowWrite: allowWrite   )
+        let ncid = try Nc.open(path: file, allowWrite: allowWrite   )
         return try Group(ncid: ncid, parent: nil)
     }
 }
@@ -29,12 +29,12 @@ public final class Group {
     init(ncid: Int32, parent: Group?) throws {
         self.parent = parent
         self.ncid = ncid
-        self.name = try netcdfLock.inq_grpname(ncid: ncid)
+        self.name = try Nc.inq_grpname(ncid: ncid)
     }
     
     /// Create a new group
     init(name: String, parent: Group) throws {
-        self.ncid = try netcdfLock.def_grp(ncid: parent.ncid, name: name)
+        self.ncid = try Nc.def_grp(ncid: parent.ncid, name: name)
         self.parent = parent
         self.name = name
     }
@@ -42,7 +42,7 @@ public final class Group {
     /// Close the netcdf file if this is the last group
     deinit {
         if parent == nil {
-            try? netcdfLock.close(ncid: ncid)
+            try? Nc.close(ncid: ncid)
         }
     }
     
@@ -68,15 +68,15 @@ public final class Group {
     
     /// Return all dimensions registered in this group
     public func getDimensions() throws -> [Dimension] {
-        let ids = try netcdfLock.inq_dimids(ncid: ncid, includeParents: false)
-        let unlimited = try netcdfLock.inq_unlimdims(ncid: ncid)
+        let ids = try Nc.inq_dimids(ncid: ncid, includeParents: false)
+        let unlimited = try Nc.inq_unlimdims(ncid: ncid)
         return try ids.map { try Dimension(fromDimId: $0, isUnlimited: unlimited.contains($0), group: self) }
     }
     
     /// Try to open an exsiting variable. Nil if it does not exist
     public func getVariable(byName name: String) throws -> Variable? {
         do {
-            let varid = try netcdfLock.inq_varid(ncid: ncid, name: name)
+            let varid = try Nc.inq_varid(ncid: ncid, name: name)
             return try Variable(fromVarId: varid, group: self)
         } catch (NetCDFError.invalidVariable) {
             return nil
@@ -85,7 +85,7 @@ public final class Group {
     
     /// Get all varibales in the group
     public func getVariables() throws -> [Variable] {
-        let ids = try netcdfLock.inq_varids(ncid: ncid)
+        let ids = try Nc.inq_varids(ncid: ncid)
         return try ids.map { try Variable(fromVarId: $0, group: self) }
     }
     
@@ -102,7 +102,7 @@ public final class Group {
     /// Try to open an exsisting subgroup. Nil if it does not exist
     public func getGroup(byName name: String) throws -> Group? {
         do {
-            let groupId = try netcdfLock.inq_grp_ncid(ncid: ncid, name: name)
+            let groupId = try Nc.inq_grp_ncid(ncid: ncid, name: name)
             return try Group(ncid: groupId, parent: self)
         } catch (NetCDFError.badNcid) { // TODO check which error is used
             return nil
@@ -116,7 +116,7 @@ public final class Group {
     
     /// Get all subgroups
     public func getGroups() throws -> [Group] {
-        let ids = try netcdfLock.inq_grps(ncid: ncid)
+        let ids = try Nc.inq_grps(ncid: ncid)
         return try ids.map { try Group(ncid: $0, parent: self) }
     }
     
@@ -129,13 +129,13 @@ public final class Group {
     
     public func sync() {
         // Throws only an exception if ncid is invalid
-        try! netcdfLock.sync(ncid: ncid)
+        try! Nc.sync(ncid: ncid)
     }
 }
 
 extension Group: AttributeProvider {
     public var varid: Int32 {
-        return netcdfLock.NC_GLOBAL
+        return Nc.NC_GLOBAL
     }
     
     public var group: Group {
@@ -143,6 +143,6 @@ extension Group: AttributeProvider {
     }
     
     public var numberOfAttributes: Int32 {
-        return try! netcdfLock.inq_natts(ncid: ncid)
+        return try! Nc.inq_natts(ncid: ncid)
     }
 }
