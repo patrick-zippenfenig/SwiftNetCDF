@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import CNetCDF
 
 public enum DataClass: Int32 {
     case nc_vlen = 9999 // NC_VLEN
@@ -16,7 +15,7 @@ public enum DataType {
     case primitive(ExternalDataType)
     case userDefined(UserDefinedType)
     
-    var typeid: nc_type {
+    var typeid: Int32 {
         switch self {
         case .primitive(let type): return type.rawValue
         case .userDefined(let userDefined): return userDefined.typeid
@@ -30,7 +29,7 @@ public enum DataType {
     }
     var byteSize: Int { fatalError() }
     
-    init(fromTypeId typeid: nc_type, group: Group) throws {
+    init(fromTypeId typeid: Int32, group: Group) throws {
         if let primitve = ExternalDataType(rawValue: typeid) {
             self = DataType.primitive(primitve)
             return
@@ -49,14 +48,14 @@ public enum UserDefinedType {
     case opaque(Opaque)
     case variableLength(VariableLength)
     
-    var typeid: nc_type { fatalError() }
+    var typeid: Int32 { fatalError() }
     var byteSize: Int { fatalError() }
     var name: String { fatalError() }
 }
 
 public struct Compound {
     let group: Group
-    let typeid: nc_type
+    let typeid: Int32
     let name: String
     let size: Int
     let numerOfFields: Int
@@ -64,14 +63,14 @@ public struct Compound {
 
 public struct Opaque {
     let group: Group
-    let typeid: nc_type
+    let typeid: Int32
     let name: String
     let size: Int
 }
 
 public struct Enumeration {
     let group: Group
-    let typeid: nc_type
+    let typeid: Int32
     let name: String
     let size: Int
     let numerOfFields: Int
@@ -79,8 +78,8 @@ public struct Enumeration {
 
 public struct VariableLength {
     let group: Group
-    let typeid: nc_type
+    let typeid: Int32
     let name: String
     let size: Int
-    let baseTypeId: nc_type
+    let baseTypeId: Int32
 }

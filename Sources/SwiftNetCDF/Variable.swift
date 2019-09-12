@@ -6,8 +6,6 @@
 //
 
 import Foundation
-import CNetCDF
-
 
 // TODO adding an attributes modified the numberOfAttributes
 
@@ -54,14 +52,11 @@ public struct Variable {
     
     /// enable compression for this netcdf variable. This should be set before any data is written
     public func enableCompression(level: Int = 6, shuffle: Bool = false, chunks: [Int]? = nil) throws {
-        try netcdfLock.nc_exec {
-            nc_def_var_deflate(group.ncid, varid, shuffle ? 1 : 0, 1, Int32(level))
-        }
+        try netcdfLock.def_var_deflate(ncid: group.ncid, varid: varid, shuffle: shuffle, deflate: true, deflate_level: Int32(level))
+        
         if let chunks = chunks {
             precondition(chunks.count == dimensions.count, "Chunk dimensions must have the same amount of elements as variable dimensions")
-            try netcdfLock.nc_exec {
-                nc_def_var_chunking(group.ncid, varid, NC_CHUNKED, chunks)
-            }
+            try netcdfLock.def_var_chunking(ncid: group.ncid, varid: varid, chunks: chunks)
         }
     }
     
@@ -74,7 +69,7 @@ public struct Variable {
     }
     
     /// Read raw by using the datatype size directly
-    public func readRaw(offset: [Int], count: [Int]) throws -> Data {
+    /*public func readRaw(offset: [Int], count: [Int]) throws -> Data {
         assert(dimensions.count == offset.count)
         assert(dimensions.count == count.count)
         let n_elements = count.reduce(1, *)
@@ -86,7 +81,7 @@ public struct Variable {
             }
         }
         return data
-    }
+    }*/
     
     public func getCdl(indent: Int) -> String {
         let ind = String(repeating: " ", count: indent)

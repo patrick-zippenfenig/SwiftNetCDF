@@ -347,4 +347,16 @@ extension Lock {
             nc_put_vars(ncid, varid, offset, count, stride, ptr)
         }
     }
+    
+    func def_var_deflate(ncid: Int32, varid: Int32, shuffle: Bool, deflate: Bool, deflate_level: Int32) throws {
+        try nc_exec {
+            nc_def_var_deflate(ncid, varid, shuffle ? 1 : 0, deflate ? 1 : 0, deflate_level)
+        }
+    }
+    
+    func def_var_chunking(ncid: Int32, varid: Int32, chunks: [Int]) throws {
+        try nc_exec {
+            nc_def_var_chunking(ncid, varid, NC_CHUNKED, chunks)
+        }
+    }
 }
