@@ -103,6 +103,17 @@ group: / {
         let data_uint = [UInt(123),345,678,.min,.max]
         try file.setAttribute("TEST_UINT64", data_uint)
         XCTAssertEqual(try file.getAttribute("TEST_UINT64")!.read(), data_uint)
+        
+        
+        // legacy applications may wrote unsigned integers into singed NetCDF types
+        let udata8 = try file.getAttribute("TEST_INT8")!.read()! as [UInt8]
+        XCTAssertEqual(udata8, [123, 127, 129])
+        let udata16 = try file.getAttribute("TEST_INT16")!.read()! as [UInt16]
+        XCTAssertEqual(udata16, [1263, 1627, 32768, 32767])
+        let udata32 = try file.getAttribute("TEST_INT32")!.read()! as [UInt32]
+        XCTAssertEqual(udata32, [12653, 16627, 4294954529, 2147483648, 2147483647])
+        let udata64 = try file.getAttribute("TEST_INT64")!.read()! as [UInt]
+        XCTAssertEqual(udata64, [123, 345, 18446744073709550938, 9223372036854775808, 9223372036854775807])
     }
     
     func testExample() {

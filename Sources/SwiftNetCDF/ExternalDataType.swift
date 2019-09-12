@@ -31,8 +31,6 @@ public enum ExternalDataType: Int32 {
     }
 }
 
-// TODO: currently it is not possible to read NC_CHAR. Consider an array of accepted data types. E.g. Int8 is allowed to read NC_BYTE, NC_CHAR and NC_UBYTE
-
 
 /// Conforming allows read and write operations for netcdf read/write
 public protocol NetcdfConvertible {
@@ -43,6 +41,22 @@ public protocol NetcdfConvertible {
     static func withPointer(to: [Self], fn: (UnsafeRawPointer) throws -> ()) throws
     
     static var netcdfType: ExternalDataType { get }
+    
+    /**
+     Some NetCDF dataypes are not exclusively mapped to a single Swift type. E.g. NC_CHAR and NC_BYTE can both be read by Swift Int8.
+     Also legacy applications with NetCDF version 3 did not have unsigned data types and may store unsigned data in signed data.
+     Reading a NC_INT64 into Swift UInt is therefore also allowed
+     */
+    static func canRead(type: ExternalDataType) -> Bool
+}
+
+extension NetcdfConvertible {
+    static func canRead(type: DataType) -> Bool {
+        guard case let DataType.primitive(primitive) = type else {
+            return false
+        }
+        return canRead(type: primitive)
+    }
 }
 
 
@@ -66,46 +80,80 @@ extension NetcdfConvertibleNumeric {
 extension Float: NetcdfConvertibleNumeric {
     public static var emptyValue: Float { return Float.nan }
     public static var netcdfType: ExternalDataType { return .float }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .float
+    }
 }
 extension Double: NetcdfConvertibleNumeric {
     public static var emptyValue: Double { return Double.nan }
     public static var netcdfType: ExternalDataType { return .double }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .double
+    }
 }
 extension Int8: NetcdfConvertibleNumeric {
     public static var emptyValue: Int8 { return Int8.min }
     public static var netcdfType: ExternalDataType { return .byte }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .byte || type == .char
+    }
 }
 extension Int16: NetcdfConvertibleNumeric {
     public static var emptyValue: Int16 { return Int16.min }
     public static var netcdfType: ExternalDataType { return .short }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .short
+    }
 }
 extension Int32: NetcdfConvertibleNumeric {
     public static var emptyValue: Int32 { return Int32.min }
     public static var netcdfType: ExternalDataType { return .int32 }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .int32
+    }
 }
 extension Int: NetcdfConvertibleNumeric {
     public static var emptyValue: Int { return Int.min }
     public static var netcdfType: ExternalDataType { return .int64 }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .int64
+    }
 }
 extension UInt8: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt8 { return UInt8.max }
     public static var netcdfType: ExternalDataType { return .ubyte }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .ubyte || type == .byte || type == .char
+    }
 }
 extension UInt16: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt16 { return UInt16.max }
     public static var netcdfType: ExternalDataType { return .ushort }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .ushort || type == .short
+    }
 }
 extension UInt32: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt32 { return UInt32.max }
     public static var netcdfType: ExternalDataType { return .uint32 }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .uint32 || type == .int32
+    }
 }
 extension UInt: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt { return UInt.max }
     public static var netcdfType: ExternalDataType { return .uint64 }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .uint64 || type == .int64
+    }
 }
 
 
 extension String: NetcdfConvertible {
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .string
+    }
+    
     public static var netcdfType: ExternalDataType { return .string }
     
     public static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [String] {

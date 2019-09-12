@@ -65,7 +65,7 @@ public struct Attribute<Parent: AttributeProvider> {
     }
     
     public func read<T: NetcdfConvertible>() throws -> [T]? {
-        guard T.netcdfType.rawValue == type.typeid else {
+        guard T.canRead(type: type) else {
             return nil
         }
         return try T.createFromBuffer(length: length, fn: readRaw)

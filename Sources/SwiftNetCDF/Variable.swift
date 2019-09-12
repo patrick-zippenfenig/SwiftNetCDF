@@ -67,10 +67,7 @@ public struct Variable {
     
     /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
     public func asType<T: NetcdfConvertible>(_ of: T.Type) -> VariableGeneric<T>? {
-        guard case let DataType.primitive(primitive) = dataType else {
-            return nil
-        }
-        guard T.netcdfType == primitive else {
+        guard T.canRead(type: dataType) else {
             return nil
         }
         return VariableGeneric(variable: self)
