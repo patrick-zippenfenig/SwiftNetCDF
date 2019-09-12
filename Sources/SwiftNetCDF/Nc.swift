@@ -16,7 +16,9 @@ public enum NetCDFError: Error {
     case badVarid
     case badGroupid
     case badName
+    case alreadyInDefineMode
     case attributeNotFound
+    case fileIsReadOnly
     case valueCanNotBeConverted
     
     init(ncerr: Int32) {
@@ -27,6 +29,8 @@ public enum NetCDFError: Error {
         case NC_EBADGRPID: self = .badGroupid
         case NC_EBADNAME: self = .badName
         case NC_ENOTATT: self = .attributeNotFound
+        case NC_EINDEFINE: self = .alreadyInDefineMode
+        case NC_EPERM: self = .fileIsReadOnly
         default:
             let error = String(cString: nc_strerror(ncerr))
             self = .ncerror(code: ncerr, error: error)
@@ -53,7 +57,7 @@ public struct TypeId: Equatable {
  A VarId is always bound to a NcId. We make sure this stays this way.
  */
 public struct VarId {
-    let ncid: NcId
+    public let ncid: NcId
     let varid: Int32
     
     fileprivate init(ncid: NcId, varid: Int32) {
@@ -286,18 +290,39 @@ public struct NcId {
     }
     
     /// Sync to disk
-    public func sync() throws {
-        try Nc.exec {
+    public func sync() {
+        /// Throws only for wrong ncid. Should not be possible.
+        try! Nc.exec {
             nc_sync(ncid)
         }
     }
     
-    /// Close the netcdf file
+    /**
+     Close the netcdf file.
+     
+     - Throws `NetCDFError.badGroupid` if this was not the root id.
+     */
     public func close() throws {
         try Nc.exec {
             nc_close(ncid)
         }
     }
+    
+    /// Set to define mode
+    public func redef() throws {
+        try Nc.exec {
+            nc_redef(ncid)
+        }
+    }
+    
+    /// Set to define mode
+    public func enddef() {
+        /// Throws only for wrong ncid. Should not be possible.
+        try! Nc.exec {
+            nc_enddef(ncid)
+        }
+    }
+    
     
     /// Numer of attributes for this ncid
     public func inq_natts() throws -> Int32 {

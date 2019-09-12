@@ -20,10 +20,14 @@ public final class File {
 }
 
 public final class Group {
-    let parent: Group?
-    /// id of the group
-    let ncid: NcId
-    let name: String
+    /// Parent in case of this is a subgroup. Nil if this group if the root group
+    public let parent: Group?
+    
+    /// Netcdf ncid of the group. Offers methods to query additonal information
+    public let ncid: NcId
+    
+    /// Name of this group. "/" for the root group.
+    public let name: String
     
     /// Existing group from ID.
     init(ncid: NcId, parent: Group?) throws {
@@ -127,9 +131,60 @@ public final class Group {
         return try Dimension(group: self, name: name, length: length, isUnlimited: isUnlimited)
     }
     
+    /**
+     Synchronize an open netcdf dataset to disk.
+     
+     The function nc_sync() offers a way to synchronize the disk copy of a netCDF dataset with in-memory buffers. There are two reasons you might want to synchronize after writes:
+     
+     To minimize data loss in case of abnormal termination, or
+     To make data available to other processes for reading immediately after it is written. But note that a process that already had the dataset open for reading would not see the number of records increase when the writing process calls nc_sync(); to accomplish this, the reading process must call nc_sync.
+     This function is backward-compatible with previous versions of the netCDF library. The intent was to allow sharing of a netCDF dataset among multiple readers and one writer, by having the writer call nc_sync() after writing and the readers call nc_sync() before each read. For a writer, this flushes buffers to disk. For a reader, it makes sure that the next read will be from disk rather than from previously cached buffers, so that the reader will see changes made by the writing process (e.g., the number of records written) without having to close and reopen the dataset. If you are only accessing a small amount of data, it can be expensive in computer resources to always synchronize to disk after every write, since you are giving up the benefits of buffering.
+     
+     An easier way to accomplish sharing (and what is now recommended) is to have the writer and readers open the dataset with the NC_SHARE flag, and then it will not be necessary to call nc_sync() at all. However, the nc_sync() function still provides finer granularity than the NC_SHARE flag, if only a few netCDF accesses need to be synchronized among processes.
+     
+     It is important to note that changes to the ancillary data, such as attribute values, are not propagated automatically by use of the NC_SHARE flag. Use of the nc_sync() function is still required for this purpose.
+     
+     Sharing datasets when the writer enters define mode to change the data schema requires extra care. In previous releases, after the writer left define mode, the readers were left looking at an old copy of the dataset, since the changes were made to a new copy. The only way readers could see the changes was by closing and reopening the dataset. Now the changes are made in place, but readers have no knowledge that their internal tables are now inconsistent with the new dataset schema. If netCDF datasets are shared across redefinition, some mechanism external to the netCDF library must be provided that prevents access by readers during redefinition and causes the readers to call nc_sync before any subsequent access.
+     
+     When calling nc_sync(), the netCDF dataset must be in data mode. A netCDF dataset in define mode is synchronized to disk only when nc_enddef() is called. A process that is reading a netCDF dataset that another process is writing may call nc_sync to get updated with the changes made to the data by the writing process (e.g., the number of records written), without having to close and reopen the dataset.
+     
+     Data is automatically synchronized to disk when a netCDF dataset is closed, or whenever you leave define mode.
+     */
     public func sync() {
-        // Throws only an exception if ncid is invalid
-        try! ncid.sync()
+        ncid.sync()
+    }
+    
+    /**
+     Put open netcdf dataset into define mode.
+     
+     The function nc_redef puts an open netCDF dataset into define mode, so dimensions, variables, and attributes can be added or renamed and attributes can be deleted.
+     
+     For netCDF-4 files (i.e. files created with NC_NETCDF4 in the cmode in their call to nc_create()), it is not necessary to call nc_redef() unless the file was also created with NC_STRICT_NC3. For straight-up netCDF-4 files, nc_redef() is called automatically, as needed.
+     
+     For all netCDF-4 files, the root ncid must be used. This is the ncid returned by nc_open() and nc_create(), and points to the root of the hierarchy tree for netCDF-4 files.
+     
+     - Throws:
+        - `NetCDFError.badGroupid` The ncid must refer to the root group of the file and not a subgroup
+        - `NetCDFError.alreadyInDefineMode` Already in define mode
+        - `NetCDFError.fileIsReadOnly` File is read only
+     */
+    public func redefine() throws {
+        try ncid.redef()
+    }
+    
+    /**
+     Leave define mode.
+     
+     The changes made to the netCDF dataset while it was in define mode are checked and committed to disk if no problems occurred. Non-record variables may be initialized to a "fill value" as well with nc_set_fill(). The netCDF dataset is then placed in data mode, so variable data can be read or written.
+     
+     It's not necessary to call nc_enddef() for netCDF-4 files. With netCDF-4 files, nc_enddef() is called when needed by the netcdf-4 library. User calls to nc_enddef() for netCDF-4 files still flush the metadata to disk.
+     
+     This call may involve copying data under some circumstances. For a more extensive discussion see File Structure and Performance.
+     
+     For netCDF-4/HDF5 format files there are some variable settings (the compression, endianness, fletcher32 error correction, and fill value) which must be set (if they are going to be set at all) between the nc_def_var() and the next nc_enddef(). Once the nc_enddef() is called, these settings can no longer be changed for a variable.
+     */
+    public func endDefineMode() {
+        ncid.enddef()
     }
 }
 
