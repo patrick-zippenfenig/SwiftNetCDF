@@ -4,10 +4,11 @@
 //
 //  Created by Patrick Zippenfenig on 2019-09-10.
 //
+
 import CNetCDF
 import Foundation
 
-
+/// All errors this library could throw
 public enum NetCDFError: Error {
     case ncerror(code: Int32, error: String)
     case invalidVariable
@@ -39,6 +40,7 @@ public extension ExternalDataType {
     }
 }
 
+/// Represent a data type ID. Could be an external or userdefined type.
 public struct TypeId: Equatable {
     let typeid: Int32
     
@@ -59,6 +61,7 @@ public struct VarId {
         self.varid = varid
     }
     
+    /// Get information about this variable
     public func inq_var() throws -> (name: String, typeid: TypeId, dimensionIds: [DimId], nAttributes: Int32) {
         let nDimensions = try inq_varndims()
         var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
@@ -70,12 +73,14 @@ public struct VarId {
         return (name, TypeId(typeid), dimensionIds.map(DimId.init), nAttribudes)
     }
     
+    /// Get the name of an attribute by id
     public func inq_attname(attid: Int32) throws -> String {
         return try Nc.execWithStringBuffer {
             nc_inq_attname(ncid.ncid, varid, attid, $0)
         }
     }
     
+    /// Get the type and length of an attribute
     public func inq_att(name: String) throws -> (typeid: TypeId, length: Int) {
         var typeid: Int32 = 0
         var len: Int = 0
@@ -84,7 +89,6 @@ public struct VarId {
         }
         return (TypeId(typeid), len)
     }
-    
     
     /// Get all variable IDs of a group id
     public func inq_varndims() throws -> Int32 {
@@ -95,18 +99,14 @@ public struct VarId {
         return count
     }
     
+    /// Set a new attribute
     public func put_att(name: String, type: TypeId, length: Int, ptr: UnsafeRawPointer) throws {
         try Nc.exec {
             nc_put_att(ncid.ncid, varid, name, type.typeid, length, ptr)
         }
     }
     
-    public func put_att_text(name: String, length: Int, text: String) throws {
-        try Nc.exec {
-            nc_put_att_text(ncid.ncid, varid, name, length, text)
-        }
-    }
-    
+    /// Number of attributes in this variable
     public func inq_attlen(name: String) throws -> Int {
         var len: Int = 0
         try Nc.exec {
@@ -115,61 +115,70 @@ public struct VarId {
         return len
     }
     
+    /// Read an attribute into a buffer
     public func get_att(name: String, buffer: UnsafeMutableRawPointer) throws {
         try Nc.exec {
             nc_get_att(ncid.ncid, varid, name, buffer)
         }
     }
     
-    
+    /// Read the variable by offset and count vector into a buffer
     public func get_vara(offset: [Int], count: [Int], buffer: UnsafeMutableRawPointer) throws {
         try Nc.exec {
             nc_get_vara(ncid.ncid, varid, offset, count, buffer)
         }
     }
     
+    /// Read the variable by offset, count and stride vector into a buffer
     public func get_vars(offset: [Int], count: [Int], stride: [Int], buffer: UnsafeMutableRawPointer) throws {
         try Nc.exec {
             nc_get_vars(ncid.ncid, varid, offset, count, stride, buffer)
         }
     }
     
+    /// Write a buffer by offset and count into this variable
     public func put_vara(offset: [Int], count: [Int], ptr: UnsafeRawPointer) throws {
         try Nc.exec {
             nc_put_vara(ncid.ncid, varid, offset, count, ptr)
         }
     }
     
+    /// Write a buffer by offset, count and stride into this variable
     public func put_vars(offset: [Int], count: [Int], stride: [Int], ptr: UnsafeRawPointer) throws {
         try Nc.exec {
             nc_put_vars(ncid.ncid, varid, offset, count, stride, ptr)
         }
     }
     
+    /// Set deflate options
     public func def_var_deflate(shuffle: Bool, deflate: Bool, deflate_level: Int32) throws {
         try Nc.exec {
             nc_def_var_deflate(ncid.ncid, varid, shuffle ? 1 : 0, deflate ? 1 : 0, deflate_level)
         }
     }
     
+    /// Set chunking options
     public func def_var_chunking(type: Chunking, chunks: [Int]) throws {
         try Nc.exec {
             return nc_def_var_chunking(ncid.ncid, varid, type.netcdfValue, chunks)
         }
     }
     
+    /// Set flecther32 options
     public func def_var_flechter32(enable: Bool) throws {
         try Nc.exec {
             nc_def_var_fletcher32(ncid.ncid, varid, enable ? 1 : 0)
         }
     }
     
+    /// Set endian options
     public func def_var_endian(type: Endian) throws {
         try Nc.exec {
             nc_def_var_endian(ncid.ncid, varid, type.netcdfValue)
         }
     }
     
+    /// Set filter options
     public func def_var_filter(id: UInt32, params: [UInt32]) throws {
         try Nc.exec {
             nc_def_var_filter(ncid.ncid, varid, id, params.count, params)
@@ -178,7 +187,7 @@ public struct VarId {
 }
 
 
-
+/// Represent a dimension id.
 public struct DimId: Equatable {
     let dimid: Int32
     
@@ -186,6 +195,7 @@ public struct DimId: Equatable {
         self.dimid = dimid
     }
     
+    /// A dimension could be of fixed or unlimited length
     public enum Length {
         case unlimited
         case length(Int)
@@ -481,6 +491,7 @@ public extension Nc {
     }
 }
 
+/// Options for chunking
 public enum Chunking {
     case chunked
     case contingous
@@ -493,6 +504,7 @@ public enum Chunking {
     }
 }
 
+/// Options for endian
 public enum Endian {
     case native
     case little

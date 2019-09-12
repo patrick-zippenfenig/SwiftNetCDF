@@ -7,11 +7,7 @@
 
 import Foundation
 
-/*public indirect enum FileOrGroup {
-    case file(File)
-    case group(Group)
-}*/
-
+/// Information about a dimension
 public struct Dimension {
     let dimid: DimId
     let name: String
@@ -49,9 +45,4 @@ public struct Dimension {
         }
         return "\(name) = \(length) ;"
     }
-    
-    /*public enum LengthOrUnlimited {
-        case length(Int)
-        case unlimited
-    }*/
 }

@@ -19,20 +19,24 @@ public protocol AttributeProvider {
 }
 
 extension AttributeProvider {
+    /// Get all attributes
     public func getAttributes() throws -> [Attribute<Self>] {
         return try (0..<numberOfAttributes).map {
             try getAttribute(try varid.inq_attname(attid: $0))!
         }
     }
     
+    /// Get an attribute by name. Nil if it does not exist.
     public func getAttribute(_ key: String) throws -> Attribute<Self>? {
         return try Attribute(fromExistingName: key, parent: self)
     }
     
+    /// Define a new attribute by name. The value must be a supported external type.
     public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: T) throws {
         try setAttribute(name, [value])
     }
     
+    /// Define a new attribute by name. The value must be a supported external type.
     public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: [T]) throws {
         let type = DataType.primitive(T.netcdfType)
         try T.withPointer(to: value) { ptr in
@@ -46,13 +50,15 @@ extension AttributeProvider {
     }
 }
 
+/// A single attribute of a group or variable.
 public struct Attribute<Parent: AttributeProvider> {
     let parent: Parent
     let name: String
     let type: DataType
     let length: Int
     
-    init?(fromExistingName name: String, parent: Parent) throws {
+    /// Try to initialise from a name. Nil if the attributes does not exist
+    fileprivate init?(fromExistingName name: String, parent: Parent) throws {
         do {
             let attinq = try parent.varid.inq_att(name: name)
             self.parent = parent
@@ -64,6 +70,7 @@ public struct Attribute<Parent: AttributeProvider> {
         }
     }
     
+    /// Try to read this attribute as an external type. Nil if types do not match.
     public func read<T: NetcdfConvertible>() throws -> [T]? {
         guard T.canRead(type: type) else {
             return nil
@@ -71,6 +78,7 @@ public struct Attribute<Parent: AttributeProvider> {
         return try T.createFromBuffer(length: length, fn: readRaw)
     }
     
+    /// Try to read this attribute as an external type. Nil if types do not match or it is not a scalar.
     public func read<T: NetcdfConvertible>() throws -> T? {
         guard length == 1 else {
             return nil
