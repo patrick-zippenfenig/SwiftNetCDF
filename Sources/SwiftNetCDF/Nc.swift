@@ -157,6 +157,19 @@ public struct VarId {
         }
     }
     
+    /// Options for chunking
+    public enum Chunking {
+        case chunked
+        case contingous
+        
+        fileprivate var netcdfValue: Int32 {
+            switch self {
+            case .chunked: return NC_CHUNKED
+            case .contingous: return NC_CONTIGUOUS
+            }
+        }
+    }
+    
     /// Set chunking options
     public func def_var_chunking(type: Chunking, chunks: [Int]) throws {
         try Nc.exec {
@@ -168,6 +181,21 @@ public struct VarId {
     public func def_var_flechter32(enable: Bool) throws {
         try Nc.exec {
             nc_def_var_fletcher32(ncid.ncid, varid, enable ? 1 : 0)
+        }
+    }
+    
+    /// Options for endian
+    public enum Endian {
+        case native
+        case little
+        case big
+        
+        fileprivate var netcdfValue: Int32 {
+            switch self {
+            case .native: return NC_ENDIAN_NATIVE
+            case .little: return NC_ENDIAN_LITTLE
+            case .big: return NC_ENDIAN_BIG
+            }
         }
     }
     
@@ -487,34 +515,6 @@ public extension Nc {
         /// no error should be possible
         try! exec {
             nc_free_string(len, stringArray)
-        }
-    }
-}
-
-/// Options for chunking
-public enum Chunking {
-    case chunked
-    case contingous
-    
-    fileprivate var netcdfValue: Int32 {
-        switch self {
-        case .chunked: return NC_CHUNKED
-        case .contingous: return NC_CONTIGUOUS
-        }
-    }
-}
-
-/// Options for endian
-public enum Endian {
-    case native
-    case little
-    case big
-    
-    fileprivate var netcdfValue: Int32 {
-        switch self {
-        case .native: return NC_ENDIAN_NATIVE
-        case .little: return NC_ENDIAN_LITTLE
-        case .big: return NC_ENDIAN_BIG
         }
     }
 }

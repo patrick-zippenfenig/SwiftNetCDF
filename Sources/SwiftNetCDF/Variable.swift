@@ -85,7 +85,7 @@ public struct Variable {
      
      Note that this does not work for scalar variables. Only non-scalar variables can have chunking.
      */
-    public func defineChunking(chunking: Chunking, chunks: [Int]) throws {
+    public func defineChunking(chunking: VarId.Chunking, chunks: [Int]) throws {
         precondition(chunks.count == dimensions.count, "Chunk dimensions must have the same amount of elements as variable dimensions")
         try varid.def_var_chunking(type: chunking, chunks: chunks)
     }
@@ -110,7 +110,7 @@ public struct Variable {
      
      This function may only be called after the variable is defined, but before nc_enddef is called.
      */
-    public func defineEndian(endian: Endian) throws {
+    public func defineEndian(endian: VarId.Endian) throws {
         try varid.def_var_endian(type: endian)
     }
     
