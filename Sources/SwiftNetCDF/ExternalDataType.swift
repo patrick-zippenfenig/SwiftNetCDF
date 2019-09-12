@@ -7,27 +7,34 @@
 
 import Foundation
 
-/// Map netcdf type specific functions and swift data types
+/**
+ These datatypes are available as external and are mapped to Swift datatypes with the protocol `NetcdfConvertible`.
+ */
 public enum ExternalDataType: Int32 {
-    //case not_a_type = 0
-    case byte = 1 // NC_BYTE Int8 8-bit signed integer
-    case char = 2 // NC_CHAR Int8 8-bit character
-    case short = 3 // Int16 NC_SHORT 16-bit integer
-    case int32 = 4 // NC_INT (or NC_LONG) 32-bit signed integer
-    case float = 5 // NC_FLOAT 32-bit floating point
-    case double = 6 // NC_DOUBLE 64-bit floating point
-    case ubyte = 7 // NC_UBYTE 8-bit unsigned integer *
-    case ushort = 8 // NC_USHORT 16-bit unsigned integer *
-    case uint32 = 9 // NC_UINT 32-bit unsigned integer *
-    case int64 = 10 // NC_INT64 64-bit signed integer *
-    case uint64 = 11 // NC_UINT64 64-bit unsigned integer *
-    case string = 12 // NC_STRING variable length character string (available only for netCDF-4 (NC_NETCDF4) files.)
-    
-    //  These types are available only for CDF5 (NC_CDF5) and netCDF-4 format (NC_NETCDF4) files. All the unsigned ints and the 64-bit ints are for CDF5 or netCDF-4 files only.
-    
-    var name: String {
-        return "\(self)"
-    }
+    /// NC_BYTE Int8 8-bit signed integer
+    case byte = 1
+    /// NC_CHAR Int8 8-bit character
+    case char = 2
+    /// Int16 NC_SHORT 16-bit integer
+    case short = 3
+    /// NC_INT (or NC_LONG) 32-bit signed integer
+    case int32 = 4
+    /// NC_FLOAT 32-bit floating point
+    case float = 5
+    /// NC_DOUBLE 64-bit floating point
+    case double = 6
+    /// NC_UBYTE 8-bit unsigned integer (NetCDF 4 only)
+    case ubyte = 7
+    /// NC_USHORT 16-bit unsigned integer (NetCDF 4 only)
+    case ushort = 8
+    /// NC_UINT 32-bit unsigned integer (NetCDF 4 only)
+    case uint32 = 9
+    /// NC_INT64 64-bit signed integer (NetCDF 4 only)
+    case int64 = 10
+    /// NC_UINT64 64-bit unsigned integer (NetCDF 4 only)
+    case uint64 = 11
+    /// NC_STRING variable length character string (NetCDF 4 only)
+    case string = 12
 }
 
 
@@ -39,6 +46,7 @@ public protocol NetcdfConvertible {
     /// Serialise array of values
     static func withPointer(to: [Self], fn: (UnsafeRawPointer) throws -> ()) throws
     
+    /// The type a Swift variable should represent in a NetCDF file.
     static var netcdfType: ExternalDataType { get }
     
     /**
@@ -50,12 +58,7 @@ public protocol NetcdfConvertible {
 }
 
 extension NetcdfConvertible {
-    /*static func canRead(type: DataType) -> Bool {
-        guard case let DataType.primitive(primitive) = type else {
-            return false
-        }
-        return canRead(type: primitive)
-    }*/
+    /// Wheter or not this type can be read
     static func canRead(type: TypeId) -> Bool {
         guard let externalType = ExternalDataType(rawValue: type.typeid) else {
             return false
@@ -64,8 +67,8 @@ extension NetcdfConvertible {
     }
 }
 
-
-fileprivate protocol NetcdfConvertibleNumeric: NetcdfConvertible {
+/// Numeric NetCDF exernal types. Actually all types except String. A basic conversion with array is possible.
+public protocol NetcdfConvertibleNumeric: NetcdfConvertible {
     static var emptyValue: Self { get }
 }
 
