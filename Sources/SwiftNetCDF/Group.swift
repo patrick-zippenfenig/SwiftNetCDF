@@ -39,7 +39,7 @@ public final class Group {
     }
     
     /// Return the (CDL Common Data Language) representation
-    func getCdl(headerOnly: Bool = true, indent: Int = 0) throws -> String {
+    func getCdl(headerOnly: Bool = true, indent: Int = 0) -> String {
         var out = ""
         let ind = String(repeating: " ", count: indent)
         let dimensions = getDimensions()
@@ -49,7 +49,7 @@ public final class Group {
             out += "\(ind)        \($0.getCdl())\n"
         }
         
-        let variables = try getVariables()
+        let variables = getVariables()
         out += "\(ind)  variables:\n"
         variables.forEach {
             out += $0.getCdl(indent: indent+8)
@@ -68,19 +68,17 @@ public final class Group {
     }
     
     /// Try to open an exsiting variable. Nil if it does not exist
-    public func getVariable(byName name: String) throws -> Variable? {
-        do {
-            let varid = try ncid.inq_varid(name: name)
-            return try Variable(fromVarId: varid, group: self)
-        } catch (NetCDFError.invalidVariable) {
+    public func getVariable(byName name: String) -> Variable? {
+        guard let varid = ncid.inq_varid(name: name) else {
             return nil
         }
+        return Variable(fromVarId: varid, group: self)
     }
     
     /// Get all varibales in the group
-    public func getVariables() throws -> [Variable] {
+    public func getVariables() -> [Variable] {
         let ids = ncid.inq_varids()
-        return try ids.map { try Variable(fromVarId: $0, group: self) }
+        return ids.map { Variable(fromVarId: $0, group: self) }
     }
     
     /// Define a new variable in the netcdf file
@@ -94,13 +92,11 @@ public final class Group {
     }
     
     /// Try to open an exsisting subgroup. Nil if it does not exist
-    public func getGroup(byName name: String) throws -> Group? {
-        do {
-            let groupId = try ncid.inq_grp_ncid(name: name)
-            return Group(ncid: groupId, parent: self)
-        } catch (NetCDFError.badNcid) { // TODO check which error is used
+    public func getGroup(byName name: String) -> Group? {
+        guard let groupId = ncid.inq_grp_ncid(name: name) else {
             return nil
         }
+        return Group(ncid: groupId, parent: self)
     }
     
     /// Define a new group in the netcdf file

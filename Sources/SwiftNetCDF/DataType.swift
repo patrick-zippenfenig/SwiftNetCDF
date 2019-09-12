@@ -29,13 +29,13 @@ public enum DataType {
     }
     var byteSize: Int { fatalError() }
     
-    init(fromTypeId typeid: TypeId, group: Group) throws {
+    init(fromTypeId typeid: TypeId, group: Group) {
         if let primitve = ExternalDataType(rawValue: typeid.typeid) {
             self = DataType.primitive(primitve)
             return
         }
         
-        let typeInq = try group.ncid.inq_user_type(typeid: typeid)
+        let typeInq = try! group.ncid.inq_user_type(typeid: typeid)
         // TODO switch user types
         fatalError()
         

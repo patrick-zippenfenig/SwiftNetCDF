@@ -20,7 +20,7 @@ public struct Variable {
     /**
      Initialise from an existing variable id
      */
-    init(fromVarId varid: VarId, group: Group) throws {
+    init(fromVarId varid: VarId, group: Group) {
         let varinq = varid.inq_var()
         // Unlimited dimensions are not available in NetCDF v3
         let unlimitedDimensions = (try? group.ncid.inq_unlimdims()) ?? []
@@ -30,7 +30,7 @@ public struct Variable {
         self.dimensions = varinq.dimensionIds.map {
             Dimension(fromDimId: $0, isUnlimited: unlimitedDimensions.contains($0), group: group)
         }
-        self.dataType = try DataType(fromTypeId: varinq.typeid, group: group)
+        self.dataType = DataType(fromTypeId: varinq.typeid, group: group)
     }
     
     /**

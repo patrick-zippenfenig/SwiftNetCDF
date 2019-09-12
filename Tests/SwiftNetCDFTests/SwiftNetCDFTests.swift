@@ -23,7 +23,7 @@ final class SwiftNetCDFTests: XCTestCase {
         
         // Open the same file again and read the data
         let file2 = try File.open(file: "test.nc", allowWrite: false)
-        let vari2 = try file2.getVariable(byName: "MyData")!.asType(Int32.self)!
+        let vari2 = file2.getVariable(byName: "MyData")!.asType(Int32.self)!
         let data2 = try vari2.read()
         XCTAssertEqual(data, data2)
         
@@ -38,7 +38,29 @@ group: / {
         int32 MyData(LAT, LON) ;
   } // group /
 """
-        XCTAssertEqual(cdl, try file2.getCdl())
+        XCTAssertEqual(cdl, file2.getCdl())
+    }
+    
+    /**
+     Test groups with subgroups
+     */
+    func testGroups() throws {
+        let file = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let group1 = try file.createGroup(name: "GROUP1")
+        XCTAssertNotNil(file.getGroup(byName: "GROUP1"))
+        XCTAssertNil(file.getGroup(byName: "NotExistingGroup"))
+        XCTAssertNil(file.getVariable(byName: "TEST_VAR"))
+        let dim = try file.createDimension(name: "MYDIM", length: 5)
+        let _ = try file.createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [dim])
+        XCTAssertNotNil(file.getVariable(byName: "TEST_VAR"))
+        
+        /// Subgrup in subgroup
+        XCTAssertNil(group1.getGroup(byName: "GROUP1_1"))
+        let group1_1 = try group1.createGroup(name: "GROUP1_1")
+        XCTAssertNotNil(group1.getGroup(byName: "GROUP1_1"))
+        XCTAssertNil(group1_1.getVariable(byName: "TEST_VAR"))
+        let _ = try group1_1.createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [dim])
+        XCTAssertNotNil(group1_1.getVariable(byName: "TEST_VAR"))
     }
     
     /// TODO unit test for subgroups.. also chech missing
@@ -137,6 +159,7 @@ group: / {
 
     static var allTests = [
         ("testCreateSimple", testCreateSimple),
+        ("testGroups", testGroups),
         ("testAttributes", testAttributes),
     ]
 }

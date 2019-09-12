@@ -63,7 +63,7 @@ public struct Attribute<Parent: AttributeProvider> {
             let attinq = try parent.varid.inq_att(name: name)
             self.parent = parent
             self.length = attinq.length
-            self.type = try DataType(fromTypeId: attinq.typeid, group: parent.group)
+            self.type = DataType(fromTypeId: attinq.typeid, group: parent.group)
             self.name = name
         } catch NetCDFError.attributeNotFound {
             return nil

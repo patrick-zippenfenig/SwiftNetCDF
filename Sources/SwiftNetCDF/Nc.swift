@@ -12,6 +12,7 @@ import Foundation
 public enum NetCDFError: Error {
     case ncerror(code: Int32, error: String)
     case invalidVariable
+    case noGroupFound
     case badNcid
     case badVarid
     case badGroupid
@@ -35,6 +36,7 @@ public enum NetCDFError: Error {
         case NC_EPERM: self = .fileIsReadOnly
         case NC_ENOTNC4: self = .operationRequiresNetCDFv4
         case NC_ESTRICTNC3: self = .fileIsInStrictNetCDFv3Mode
+        case NC_ENOGRP: self = .noGroupFound
         default:
             let error = String(cString: nc_strerror(ncerr))
             self = .ncerror(code: ncerr, error: error)
@@ -399,10 +401,16 @@ public struct NcId {
     
     /// Get a variable by name
     /// - Throws: `NetCDFError.invalidVariable` if variable does not exist
-    public func inq_varid(name: String) throws -> VarId {
-        var id: Int32 = 0
-        try Nc.exec { nc_inq_varid(ncid, name, &id) }
-        return VarId(ncid: self, varid: id)
+    public func inq_varid(name: String) -> VarId? {
+        do {
+            var id: Int32 = 0
+            try Nc.exec { nc_inq_varid(ncid, name, &id) }
+            return VarId(ncid: self, varid: id)
+        } catch (NetCDFError.invalidVariable) {
+            return nil
+        } catch {
+            fatalError("There should ne not other reaachable errors")
+        }
     }
     
     /// Get all sub group IDs
@@ -419,11 +427,17 @@ public struct NcId {
         return ids.map(NcId.init)
     }
     
-    /// Get a group by name
-    public func inq_grp_ncid(name: String) throws -> NcId {
-        var id: Int32 = 0
-        try Nc.exec { nc_inq_grp_ncid(ncid, name, &id) }
-        return NcId(id)
+    /// Get a group by name. Nil if group was not found
+    public func inq_grp_ncid(name: String) -> NcId? {
+        do {
+            var id: Int32 = 0
+            try Nc.exec { nc_inq_grp_ncid(ncid, name, &id) }
+            return NcId(id)
+        } catch (NetCDFError.noGroupFound) {
+            return nil
+        } catch {
+            fatalError("There should ne not other reaachable errors")
+        }
     }
     
     /**
