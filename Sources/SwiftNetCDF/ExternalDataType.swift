@@ -118,6 +118,13 @@ extension Int: NetcdfConvertibleNumeric {
         return type == .int64
     }
 }
+extension Int64: NetcdfConvertibleNumeric {
+    public static var emptyValue: Int64 { return Int64.min }
+    public static var netcdfType: ExternalDataType { return .int64 }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .int64
+    }
+}
 extension UInt8: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt8 { return UInt8.max }
     public static var netcdfType: ExternalDataType { return .ubyte }
@@ -141,6 +148,13 @@ extension UInt32: NetcdfConvertibleNumeric {
 }
 extension UInt: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt { return UInt.max }
+    public static var netcdfType: ExternalDataType { return .uint64 }
+    public static func canRead(type: ExternalDataType) -> Bool {
+        return type == .uint64 || type == .int64
+    }
+}
+extension UInt64: NetcdfConvertibleNumeric {
+    public static var emptyValue: UInt64 { return UInt64.max }
     public static var netcdfType: ExternalDataType { return .uint64 }
     public static func canRead(type: ExternalDataType) -> Bool {
         return type == .uint64 || type == .int64

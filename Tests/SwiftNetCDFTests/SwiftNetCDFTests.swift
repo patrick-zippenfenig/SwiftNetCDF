@@ -82,9 +82,13 @@ group: / {
         try file.setAttribute("TEST_INT32", data_int32)
         XCTAssertEqual(try file.getAttribute("TEST_INT32")!.read(), data_int32)
         
+        let data_int64 = [Int64(12653),16627,-12767,.min,.max]
+        try file.setAttribute("TEST_INT64", data_int64)
+        XCTAssertEqual(try file.getAttribute("TEST_INT64")!.read(), data_int64)
+        
         let data_int = [123,345,-678,.min,.max]
-        try file.setAttribute("TEST_INT64", data_int)
-        XCTAssertEqual(try file.getAttribute("TEST_INT64")!.read(), data_int)
+        try file.setAttribute("TEST_INT", data_int)
+        XCTAssertEqual(try file.getAttribute("TEST_INT")!.read(), data_int)
         
 
         // Unsigned integers
@@ -100,9 +104,13 @@ group: / {
         try file.setAttribute("TEST_UINT32", data_uint32)
         XCTAssertEqual(try file.getAttribute("TEST_UINT32")!.read(), data_uint32)
         
+        let data_uint64 = [UInt64(123),345,678,.min,.max]
+        try file.setAttribute("TEST_UINT64", data_uint64)
+        XCTAssertEqual(try file.getAttribute("TEST_UINT64")!.read(), data_uint64)
+        
         let data_uint = [UInt(123),345,678,.min,.max]
-        try file.setAttribute("TEST_UINT64", data_uint)
-        XCTAssertEqual(try file.getAttribute("TEST_UINT64")!.read(), data_uint)
+        try file.setAttribute("TEST_UINT", data_uint)
+        XCTAssertEqual(try file.getAttribute("TEST_UINT")!.read(), data_uint)
         
         
         // legacy applications may wrote unsigned integers into singed NetCDF types
@@ -112,8 +120,10 @@ group: / {
         XCTAssertEqual(udata16, [1263, 1627, 32768, 32767])
         let udata32 = try file.getAttribute("TEST_INT32")!.read()! as [UInt32]
         XCTAssertEqual(udata32, [12653, 16627, 4294954529, 2147483648, 2147483647])
-        let udata64 = try file.getAttribute("TEST_INT64")!.read()! as [UInt]
-        XCTAssertEqual(udata64, [123, 345, 18446744073709550938, 9223372036854775808, 9223372036854775807])
+        let udata64 = try file.getAttribute("TEST_INT64")!.read()! as [UInt64]
+        XCTAssertEqual(udata64, [12653, 16627, 18446744073709538849, 9223372036854775808, 9223372036854775807])
+        let udata = try file.getAttribute("TEST_INT")!.read()! as [UInt]
+        XCTAssertEqual(udata, [123, 345, 18446744073709550938, 9223372036854775808, 9223372036854775807])
     }
 
     static var allTests = [
