@@ -1,3 +1,11 @@
+//
+//  Nc.swift
+//  SwiftNetCDF
+//
+//  Created by Patrick Zippenfenig on 2019-09-10.
+//
+
+
 import CNetCDF
 import Foundation
 
@@ -32,35 +40,43 @@ enum NetCDFError: Error {
 }
 
 /**
- NetCDF is not thread safe, but the Swift API uses threads heavily. Previously ALL requests for data had been moved to single thread queue. Using locks, many threads can perform data requests at once and only lock for a short time. Only 1 thread can access netcdf functions at any time.
- 
- This is now thread safe, but not multi-threaded.
+ This struct wraps NetCDF C library functions to a more safe Swift syntax.
+ A lock is used to ensure the library is not acessed from multiple threads simultaniously.
  */
-let netcdfLock = Lock()
-
-
-
 public struct Nc {
+    /**
+     A Lock to serialise access to the NetCDF C library.
+     */
     private static let lock = Lock()
+    
+    /**
+     Reused buffer which some NetCDF routines can write names into. Afterwards it should be converted to a Swift String.
+     The buffer should only be used with a thread lock.
+     */
     private static var maxNameBuffer = [Int8](repeating: 0, count: Int(NC_MAX_NAME+1))
     
     /**
      Execute a netcdf command in a thread safe lock and check the error code. Throw an exception otherwise.
      */
-    static func exec(_ fn: () -> Int32) throws {
+    private static func exec(_ fn: () -> Int32) throws {
         let ncerr = Nc.lock.withLock(fn)
         guard ncerr == NC_NOERR else {
             throw NetCDFError(ncerr: ncerr)
         }
     }
     
-    /// Execute a closure which takes a buffer for a netcdf variable NC_MAX_NAME const string
-    static func nc_max_name(_ fn: (UnsafeMutablePointer<Int8>) -> Int32) throws -> String {
-        let ncerr = Nc.lock.withLock { fn(&Nc.maxNameBuffer) }
-        guard ncerr == NC_NOERR else {
-            throw NetCDFError(ncerr: ncerr)
+    /**
+     Execute a closure which takes a buffer for a netcdf variable NC_MAX_NAME const string.
+     Afterwards the buffer is converted to a Swift string
+     */
+    private static func nc_max_name(_ fn: (UnsafeMutablePointer<Int8>) -> Int32) throws -> String {
+        return try Nc.lock.withLock {
+            let error = fn(&Nc.maxNameBuffer)
+            guard error == NC_NOERR else {
+                throw NetCDFError(ncerr: error)
+            }
+            return String(cString: &Nc.maxNameBuffer)
         }
-        return String(cString: &Nc.maxNameBuffer)
     }
 }
 
