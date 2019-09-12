@@ -323,11 +323,32 @@ public struct NcId {
         }
     }
     
+    /// Fill mode for set_fill
+    public enum FillMode {
+        case fill
+        case noFill
+        
+        var netCdfValue: Int32 {
+            switch self {
+            case .fill: return NC_FILL
+            case .noFill: return NC_NOFILL
+            }
+        }
+    }
+    
+    /// Set the fill mode
+    public func set_fill(mode: FillMode) throws {
+        try Nc.exec {
+            nc_set_fill(ncid, mode.netCdfValue, nil)
+        }
+    }
+    
     
     /// Numer of attributes for this ncid
-    public func inq_natts() throws -> Int32 {
+    public func inq_natts() -> Int32 {
         var count: Int32 = 0
-        try Nc.exec {
+        /// Throws only for wrong ncid. Should not be possible.
+        try! Nc.exec {
             nc_inq_natts(ncid, &count)
         }
         return count
