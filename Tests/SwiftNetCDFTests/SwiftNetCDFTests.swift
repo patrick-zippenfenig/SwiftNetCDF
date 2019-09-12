@@ -46,7 +46,10 @@ group: / {
      */
     func testAttributes() throws {
         let data_float = [Float(42), 34, 123]
-        let file = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let file_raw = try File.create(file: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let variable = try file_raw.createGroup(name: "TEST").createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [try file_raw.createDimension(name: "MYDIM", length: 5)])
+        let file = variable.variable
+        
         try file.setAttribute("TEST_FLOAT", data_float)
         XCTAssertEqual(try file.getAttribute("TEST_FLOAT")!.read(), data_float)
         

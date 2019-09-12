@@ -9,11 +9,14 @@ import Foundation
 import CNetCDF
 
 
+// TODO adding an attributes modified the numberOfAttributes
+
 /// A netcdf variable of unspecified type
 public struct Variable {
-    let group: Group
+    public let group: Group
     let name: String
-    let varid: Int32
+    public let varid: Int32
+    public var numberOfAttributes: Int32
     let dimensions: [Dimension]
     let dataType: DataType
     
@@ -31,6 +34,7 @@ public struct Variable {
         self.dimensions = try varinq.dimensionIds.map {
             try Dimension(fromDimId: $0, isUnlimited: unlimitedDimensions.contains($0), group: group)
         }
+        self.numberOfAttributes = varinq.nAttributes
         self.dataType = try DataType(fromTypeId: varinq.typeid, group: group)
     }
     
@@ -45,6 +49,7 @@ public struct Variable {
         self.varid = varid
         self.dimensions = dimensions
         self.dataType = dataType
+        self.numberOfAttributes = 0
     }
     
     /// enable compression for this netcdf variable. This should be set before any data is written
@@ -61,14 +66,14 @@ public struct Variable {
     }
     
     /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
-    public func asType<T: NetcdfConvertible>(_ of: T.Type) -> VariablePrimitive<T>? {
+    public func asType<T: NetcdfConvertible>(_ of: T.Type) -> VariableGeneric<T>? {
         guard case let DataType.primitive(primitive) = dataType else {
             return nil
         }
         guard T.netcdfType == primitive else {
             return nil
         }
-        return VariablePrimitive(variable: self)
+        return VariableGeneric(variable: self)
     }
     
     /// Read raw by using the datatype size directly
@@ -93,9 +98,11 @@ public struct Variable {
     }
 }
 
+extension Variable: AttributeProvider { }
+
 
 /// A generic netcdf variable of a fixed data type
-public struct VariablePrimitive<T: NetcdfConvertible> {
+public struct VariableGeneric<T: NetcdfConvertible> {
     let variable: Variable
     
     public func read(offset: [Int], count: [Int]) throws -> [T] {

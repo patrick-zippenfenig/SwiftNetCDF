@@ -7,6 +7,9 @@
 
 import Foundation
 
+/**
+ NetCDF groups and variables provide attributes. This protocol abstracts the attribute logic.
+ */
 public protocol AttributeProvider {
     var varid: Int32 { get } // could be NC_GLOBAL
     var group: Group { get }
@@ -80,15 +83,15 @@ public struct Attribute<Parent: AttributeProvider> {
         try netcdfLock.get_att(ncid: parent.group.ncid, varid: parent.varid, name: name, buffer: buffer)
     }
     
-    public func to<T: NetcdfConvertible>(type _: T.Type) -> AttributePrimitiv<T>? {
+    public func to<T: NetcdfConvertible>(type _: T.Type) -> AttributeGeneric<T>? {
         guard T.netcdfType.rawValue == self.type.typeid else {
             return nil
         }
-        return AttributePrimitiv()
+        return AttributeGeneric()
     }
 }
 
 /// is this layer usefull?
-public struct AttributePrimitiv<T: NetcdfConvertible> {
+public struct AttributeGeneric<T: NetcdfConvertible> {
     
 }

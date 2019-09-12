@@ -94,9 +94,9 @@ public final class Group {
         return try Variable(name: name, dataType: dataType, dimensions: dimensions, group: self)
     }
     
-    public func createVariable<T: NetcdfConvertible>(name: String, type: T.Type, dimensions: [Dimension]) throws -> VariablePrimitive<T> {
+    public func createVariable<T: NetcdfConvertible>(name: String, type: T.Type, dimensions: [Dimension]) throws -> VariableGeneric<T> {
         let vari = try createVariable(name: name, dataType: DataType.primitive(T.netcdfType), dimensions: dimensions)
-        return VariablePrimitive(variable: vari)
+        return VariableGeneric(variable: vari)
     }
     
     /// Try to open an exsisting subgroup. Nil if it does not exist

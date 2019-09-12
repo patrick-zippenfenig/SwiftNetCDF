@@ -11,8 +11,8 @@ import CNetCDF
 /// Map netcdf type specific functions and swift data types
 public enum ExternalDataType: Int32 {
     //case not_a_type = 0
-    case byte = 1 // Int8 8-bit signed integer
-    case char = 2 // Int8 8-bit character
+    case byte = 1 // NC_BYTE Int8 8-bit signed integer
+    case char = 2 // NC_CHAR Int8 8-bit character
     case short = 3 // Int16 NC_SHORT 16-bit integer
     case int32 = 4 // NC_INT (or NC_LONG) 32-bit signed integer
     case float = 5 // NC_FLOAT 32-bit floating point
@@ -31,6 +31,8 @@ public enum ExternalDataType: Int32 {
     }
 }
 
+// TODO: currently it is not possible to read NC_CHAR. Consider an array of accepted data types. E.g. Int8 is allowed to read NC_BYTE, NC_CHAR and NC_UBYTE
+
 
 /// Conforming allows read and write operations for netcdf read/write
 public protocol NetcdfConvertible {
@@ -44,11 +46,11 @@ public protocol NetcdfConvertible {
 }
 
 
-fileprivate protocol ExternalDataProtocol: NetcdfConvertible {
+fileprivate protocol NetcdfConvertibleNumeric: NetcdfConvertible {
     static var emptyValue: Self { get }
 }
 
-extension ExternalDataProtocol {
+extension NetcdfConvertibleNumeric {
     public static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [Self] {
         var arr = [Self](repeating: emptyValue, count: length)
         try fn(&arr)
@@ -61,43 +63,43 @@ extension ExternalDataProtocol {
 }
 
 
-extension Float: ExternalDataProtocol {
+extension Float: NetcdfConvertibleNumeric {
     public static var emptyValue: Float { return Float.nan }
     public static var netcdfType: ExternalDataType { return .float }
 }
-extension Double: ExternalDataProtocol {
+extension Double: NetcdfConvertibleNumeric {
     public static var emptyValue: Double { return Double.nan }
     public static var netcdfType: ExternalDataType { return .double }
 }
-extension Int8: ExternalDataProtocol {
-    public static var emptyValue: Int8 { return Int8.max }
+extension Int8: NetcdfConvertibleNumeric {
+    public static var emptyValue: Int8 { return Int8.min }
     public static var netcdfType: ExternalDataType { return .byte }
 }
-extension Int16: ExternalDataProtocol {
-    public static var emptyValue: Int16 { return Int16.max }
+extension Int16: NetcdfConvertibleNumeric {
+    public static var emptyValue: Int16 { return Int16.min }
     public static var netcdfType: ExternalDataType { return .short }
 }
-extension Int32: ExternalDataProtocol {
-    public static var emptyValue: Int32 { return Int32.max }
+extension Int32: NetcdfConvertibleNumeric {
+    public static var emptyValue: Int32 { return Int32.min }
     public static var netcdfType: ExternalDataType { return .int32 }
 }
-extension Int: ExternalDataProtocol {
-    public static var emptyValue: Int { return Int.max }
+extension Int: NetcdfConvertibleNumeric {
+    public static var emptyValue: Int { return Int.min }
     public static var netcdfType: ExternalDataType { return .int64 }
 }
-extension UInt8: ExternalDataProtocol {
+extension UInt8: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt8 { return UInt8.max }
     public static var netcdfType: ExternalDataType { return .ubyte }
 }
-extension UInt16: ExternalDataProtocol {
+extension UInt16: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt16 { return UInt16.max }
     public static var netcdfType: ExternalDataType { return .ushort }
 }
-extension UInt32: ExternalDataProtocol {
+extension UInt32: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt32 { return UInt32.max }
     public static var netcdfType: ExternalDataType { return .uint32 }
 }
-extension UInt: ExternalDataProtocol {
+extension UInt: NetcdfConvertibleNumeric {
     public static var emptyValue: UInt { return UInt.max }
     public static var netcdfType: ExternalDataType { return .uint64 }
 }
