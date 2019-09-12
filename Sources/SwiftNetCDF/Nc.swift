@@ -20,6 +20,8 @@ public enum NetCDFError: Error {
     case attributeNotFound
     case fileIsReadOnly
     case valueCanNotBeConverted
+    case operationRequiresNetCDFv4
+    case fileIsInStrictNetCDFv3Mode
     
     init(ncerr: Int32) {
         switch ncerr {
@@ -31,6 +33,8 @@ public enum NetCDFError: Error {
         case NC_ENOTATT: self = .attributeNotFound
         case NC_EINDEFINE: self = .alreadyInDefineMode
         case NC_EPERM: self = .fileIsReadOnly
+        case NC_ENOTNC4: self = .operationRequiresNetCDFv4
+        case NC_ESTRICTNC3: self = .fileIsInStrictNetCDFv3Mode
         default:
             let error = String(cString: nc_strerror(ncerr))
             self = .ncerror(code: ncerr, error: error)
@@ -66,25 +70,26 @@ public struct VarId {
     }
     
     /// Get information about this variable
-    public func inq_var() throws -> (name: String, typeid: TypeId, dimensionIds: [DimId], nAttributes: Int32) {
-        let nDimensions = try inq_varndims()
+    public func inq_var() -> (name: String, typeid: TypeId, dimensionIds: [DimId], nAttributes: Int32) {
+        let nDimensions = inq_varndims()
         var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
         var nAttribudes: Int32 = 0
         var typeid: Int32 = 0
-        let name = try Nc.execWithStringBuffer {
+        /// Throws only on invalid IDs. Should not be possible
+        let name = try! Nc.execWithStringBuffer {
             nc_inq_var(ncid.ncid, varid, $0, &typeid, nil, &dimensionIds, &nAttribudes)
         }
         return (name, TypeId(typeid), dimensionIds.map(DimId.init), nAttribudes)
     }
     
-    /// Get the name of an attribute by id
+    /// Get the name of an attribute by id. Throws on internal netcdf stuff.
     public func inq_attname(attid: Int32) throws -> String {
         return try Nc.execWithStringBuffer {
             nc_inq_attname(ncid.ncid, varid, attid, $0)
         }
     }
     
-    /// Get the type and length of an attribute
+    /// Get the type and length of an attribute. Throws on internal netcdf stuff.
     public func inq_att(name: String) throws -> (typeid: TypeId, length: Int) {
         var typeid: Int32 = 0
         var len: Int = 0
@@ -95,9 +100,10 @@ public struct VarId {
     }
     
     /// Get all variable IDs of a group id
-    public func inq_varndims() throws -> Int32 {
+    public func inq_varndims() -> Int32 {
         var count: Int32 = 0
-        try Nc.exec {
+        /// Throws only on invalid IDs. Should not be possible
+        try! Nc.exec {
             nc_inq_varndims(ncid.ncid, varid, &count)
         }
         return count
@@ -355,26 +361,28 @@ public struct NcId {
     }
     
     /// Get all variable IDs of a group id
-    public func inq_varids() throws -> [VarId] {
+    public func inq_varids() -> [VarId] {
         var count: Int32 = 0
-        try Nc.exec {
+        /// No documented throw
+        try! Nc.exec {
             nc_inq_varids(ncid, &count, nil)
         }
         var ids = [Int32](repeating: 0, count: Int(count))
-        try Nc.exec {
+        try! Nc.exec {
             nc_inq_varids(ncid, nil, &ids)
         }
         return ids.map { VarId(ncid: self, varid: $0) }
     }
     
     /// Get the name of this group
-    public func inq_grpname() throws -> String {
+    public func inq_grpname() -> String {
         var nameLength = 0
-        try Nc.exec {
+        /// No documented throw
+        try! Nc.exec {
             nc_inq_grpname_len(ncid, &nameLength)
         }
         var nameBuffer = [Int8](repeating: 0, count: nameLength) // CHECK +1 needed?
-        try Nc.exec {
+        try! Nc.exec {
             nc_inq_grpname(ncid, &nameBuffer)
         }
         return String(cString: nameBuffer)
@@ -390,6 +398,7 @@ public struct NcId {
     }
     
     /// Get a variable by name
+    /// - Throws: `NetCDFError.invalidVariable` if variable does not exist
     public func inq_varid(name: String) throws -> VarId {
         var id: Int32 = 0
         try Nc.exec { nc_inq_varid(ncid, name, &id) }
@@ -397,13 +406,14 @@ public struct NcId {
     }
     
     /// Get all sub group IDs
-    public func inq_grps() throws -> [NcId] {
+    public func inq_grps() -> [NcId] {
         var count: Int32 = 0
-        try Nc.exec {
+        // No documented errors possible
+        try! Nc.exec {
             nc_inq_grps(ncid, &count, nil)
         }
         var ids = [Int32](repeating: 0, count: Int(count))
-        try Nc.exec {
+        try! Nc.exec {
             nc_inq_grps(ncid, nil, &ids)
         }
         return ids.map(NcId.init)
@@ -420,6 +430,8 @@ public struct NcId {
      Get a list of IDs of unlimited dimensions.
      In netCDF-4 files, it's possible to have multiple unlimited dimensions. This function returns a list of the unlimited dimension ids visible in a group.
      Dimensions are visible in a group if they have been defined in that group, or any ancestor group.
+     
+     - Throws: if not in NetCDF-4 mode
      */
     public func inq_unlimdims() throws -> [DimId] {
         // Get the number of dimensions
@@ -436,24 +448,27 @@ public struct NcId {
     }
 
     /// List all Dimension ids of this ncid
-    public func inq_dimids(includeParents: Bool) throws -> [DimId] {
+    public func inq_dimids(includeParents: Bool) -> [DimId] {
         // Get the number of dimensions
         var count: Int32 = 0
-        try Nc.exec {
+        try! Nc.exec {
+            /// no documented error should possible
             nc_inq_dimids(ncid, &count, nil, includeParents ? 1 : 0)
         }
         // Allocate array and get the IDs
         var ids = [Int32](repeating: 0, count: Int(count))
-        try Nc.exec {
+        try! Nc.exec {
+            /// no documented error should possible
             nc_inq_dimids(ncid, nil, &ids, includeParents ? 1 : 0)
         }
         return ids.map(DimId.init)
     }
     
     /// Get name and length of a dimension
-    public func inq_dim(dimid: DimId) throws -> (name: String, length: Int) {
+    public func inq_dim(dimid: DimId) -> (name: String, length: Int) {
         var len: Int = 0
-        let name = try Nc.execWithStringBuffer {
+        /// Throws only on invalid IDs. Should not be possible
+        let name = try! Nc.execWithStringBuffer {
             nc_inq_dim(ncid, dimid.dimid, $0, &len)
         }
         return (name, len)

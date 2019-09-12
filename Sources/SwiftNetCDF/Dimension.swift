@@ -20,8 +20,8 @@ public struct Dimension {
     /**
      Initialise from existing dimension ID. isUlimited must be supplied, because it can not be self discovered.
      */
-    init(fromDimId dimid: DimId, isUnlimited: Bool, group: Group) throws {
-        let diminq = try group.ncid.inq_dim(dimid: dimid)
+    init(fromDimId dimid: DimId, isUnlimited: Bool, group: Group) {
+        let diminq = group.ncid.inq_dim(dimid: dimid)
         self.dimid = dimid
         self.name = diminq.name
         self.length = diminq.length

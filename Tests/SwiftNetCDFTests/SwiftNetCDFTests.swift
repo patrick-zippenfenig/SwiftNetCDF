@@ -41,6 +41,8 @@ group: / {
         XCTAssertEqual(cdl, try file2.getCdl())
     }
     
+    /// TODO unit test for subgroups.. also chech missing
+    
     /**
      Write and read all attribute data-types
      */
@@ -127,6 +129,10 @@ group: / {
         XCTAssertEqual(udata64, [12653, 16627, 18446744073709538849, 9223372036854775808, 9223372036854775807])
         let udata = try file.getAttribute("TEST_INT")!.read()! as [UInt]
         XCTAssertEqual(udata, [123, 345, 18446744073709550938, 9223372036854775808, 9223372036854775807])
+        
+        let attributes = try file.getAttributes()
+        let names = attributes.map{ $0.name }.joined(separator: ", ")
+        XCTAssertEqual(names,"TEST_FLOAT, TEST_FLOAT_NAN, TEST_DOUBLE, TEST_STRING, TEST_INT8, TEST_INT16, TEST_INT32, TEST_INT64, TEST_INT, TEST_UINT8, TEST_UINT16, TEST_UINT32, TEST_UINT64, TEST_UINT")
     }
 
     static var allTests = [
