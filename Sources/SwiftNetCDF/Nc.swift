@@ -69,7 +69,7 @@ public struct Nc {
      Execute a closure which takes a buffer for a netcdf variable NC_MAX_NAME const string.
      Afterwards the buffer is converted to a Swift string
      */
-    private static func nc_max_name(_ fn: (UnsafeMutablePointer<Int8>) -> Int32) throws -> String {
+    private static func execWithStringBuffer(_ fn: (UnsafeMutablePointer<Int8>) -> Int32) throws -> String {
         return try Nc.lock.withLock {
             let error = fn(&Nc.maxNameBuffer)
             guard error == NC_NOERR else {
@@ -145,7 +145,7 @@ public extension Nc {
     
     static func inq_type(ncid: Int32, typeid: Int32) throws -> (name: String, size: Int) {
         var size = 0
-        let name = try nc_max_name {
+        let name = try execWithStringBuffer {
             nc_inq_type(ncid, typeid, $0, &size)
         }
         return (name, size)
@@ -157,7 +157,7 @@ public extension Nc {
         var baseTypeId: Int32 = 0
         var numberOfFields = 0
         var classType: Int32 = 0
-        let name = try nc_max_name {
+        let name = try execWithStringBuffer {
             nc_inq_user_type(ncid, typeid, $0, &size, &baseTypeId, &numberOfFields, &classType)
         }
         return (name, size, baseTypeId, numberOfFields, classType)
@@ -267,7 +267,7 @@ public extension Nc {
         var dimensionIds = [Int32](repeating: 0, count: Int(nDimensions))
         var nAttribudes: Int32 = 0
         var typeid: Int32 = 0
-        let name = try nc_max_name {
+        let name = try execWithStringBuffer {
             nc_inq_var(ncid, varid, $0, &typeid, nil, &dimensionIds, &nAttribudes)
         }
         return (name, typeid, dimensionIds, nAttribudes)
@@ -283,7 +283,7 @@ public extension Nc {
     
     static func inq_dim(ncid: Int32, dimid: Int32) throws -> (name: String, length: Int) {
         var len: Int = 0
-        let name = try nc_max_name {
+        let name = try execWithStringBuffer {
             nc_inq_dim(ncid, dimid, $0, &len)
         }
         return (name, len)
@@ -298,7 +298,7 @@ public extension Nc {
     }
     
     static func inq_attname(ncid: Int32, varid: Int32, attid: Int32) throws -> String {
-        return try nc_max_name {
+        return try execWithStringBuffer {
             nc_inq_attname(ncid, varid, attid, $0)
         }
     }
