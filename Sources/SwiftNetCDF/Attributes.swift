@@ -14,7 +14,7 @@ public protocol AttributeProvider {
     var varid: VarId { get } // could be NC_GLOBAL
     var group: Group { get }
     
-    /// groups and variables have differnet ways to get the attributes count
+    /// Number of attributes for a group or variable
     var numberOfAttributes: Int32 { get }
 }
 

@@ -7,14 +7,11 @@
 
 import Foundation
 
-// TODO adding an attributes modified the numberOfAttributes
-
 /// A netcdf variable of unspecified type
 public struct Variable {
     public let group: Group
     let name: String
     public let varid: VarId
-    public var numberOfAttributes: Int32
     let dimensions: [Dimension]
     let dataType: DataType
     
@@ -32,7 +29,6 @@ public struct Variable {
         self.dimensions = try varinq.dimensionIds.map {
             try Dimension(fromDimId: $0, isUnlimited: unlimitedDimensions.contains($0), group: group)
         }
-        self.numberOfAttributes = varinq.nAttributes
         self.dataType = try DataType(fromTypeId: varinq.typeid, group: group)
     }
     
@@ -47,7 +43,6 @@ public struct Variable {
         self.varid = varid
         self.dimensions = dimensions
         self.dataType = dataType
-        self.numberOfAttributes = 0
     }
     
     /**
@@ -152,7 +147,12 @@ public struct Variable {
     }
 }
 
-extension Variable: AttributeProvider { }
+extension Variable: AttributeProvider {
+    /// Number for attributes for this variable
+    public var numberOfAttributes: Int32 {
+        return varid.inq_varnatts()
+    }
+}
 
 
 /// A generic netcdf variable of a fixed data type

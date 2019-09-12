@@ -67,6 +67,7 @@ group: / {
         let data_string = ["123","345","678"]
         try file.setAttribute("TEST_STRING", data_string)
         XCTAssertEqual(try file.getAttribute("TEST_STRING")!.read(), data_string)
+        XCTAssertEqual(file.numberOfAttributes, 4)
         
         
         // Signed integers
@@ -89,6 +90,7 @@ group: / {
         let data_int = [123,345,-678,.min,.max]
         try file.setAttribute("TEST_INT", data_int)
         XCTAssertEqual(try file.getAttribute("TEST_INT")!.read(), data_int)
+        XCTAssertEqual(file.numberOfAttributes, 9)
         
 
         // Unsigned integers
@@ -111,6 +113,7 @@ group: / {
         let data_uint = [UInt(123),345,678,.min,.max]
         try file.setAttribute("TEST_UINT", data_uint)
         XCTAssertEqual(try file.getAttribute("TEST_UINT")!.read(), data_uint)
+        XCTAssertEqual(file.numberOfAttributes, 14)
         
         
         // legacy applications may wrote unsigned integers into singed NetCDF types

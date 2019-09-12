@@ -106,13 +106,23 @@ public struct VarId {
         }
     }
     
-    /// Number of attributes in this variable
-    public func inq_attlen(name: String) throws -> Int {
+    /// Length of a attribute by name
+    /*public func inq_attlen(name: String) throws -> Int {
         var len: Int = 0
         try Nc.exec {
             nc_inq_attlen(ncid.ncid, varid, name, &len)
         }
         return len
+    }*/
+    
+    /// Number of attributes in this variable
+    public func inq_varnatts() -> Int32 {
+        var count: Int32 = 0
+        /// This can only throw on invalid ncid or varid. Should not be possible.
+        try! Nc.exec {
+            nc_inq_varnatts(ncid.ncid, varid, &count)
+        }
+        return count
     }
     
     /// Read an attribute into a buffer
