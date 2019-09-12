@@ -13,7 +13,7 @@ import Foundation
 public struct Variable {
     public let group: Group
     let name: String
-    public let varid: Int32
+    public let varid: VarId
     public var numberOfAttributes: Int32
     let dimensions: [Dimension]
     let dataType: DataType
@@ -23,9 +23,9 @@ public struct Variable {
     /**
      Initialise from an existing variable id
      */
-    init(fromVarId varid: Int32, group: Group) throws {
-        let varinq = try Nc.inq_var(ncid: group.ncid, varid: varid)
-        let unlimitedDimensions = try Nc.inq_unlimdims(ncid: group.ncid)
+    init(fromVarId varid: VarId, group: Group) throws {
+        let varinq = try group.ncid.inq_var(varid: varid)
+        let unlimitedDimensions = try group.ncid.inq_unlimdims()
         self.group = group
         self.varid = varid
         self.name = varinq.name
@@ -41,7 +41,7 @@ public struct Variable {
      */
     init(name: String, dataType: DataType, dimensions: [Dimension], group: Group) throws {
         let dimensionIds = dimensions.map { $0.dimid }
-        let varid = try Nc.def_var(ncid: group.ncid, name: name, typeid: dataType.typeid, dimensionIds: dimensionIds)
+        let varid = try group.ncid.def_var(name: name, typeid: dataType.typeid, dimensionIds: dimensionIds)
         self.group = group
         self.name = name
         self.varid = varid
@@ -70,7 +70,7 @@ public struct Variable {
         - ...
      */
     public func defineDeflate(enable: Bool, level: Int = 6, shuffle: Bool = false) throws {
-        try Nc.def_var_deflate(ncid: group.ncid, varid: varid, shuffle: shuffle, deflate: enable, deflate_level: Int32(level))
+        try group.ncid.def_var_deflate(varid: varid, shuffle: shuffle, deflate: enable, deflate_level: Int32(level))
     }
     
 
@@ -87,7 +87,7 @@ public struct Variable {
      */
     public func defineChunking(chunking: Chunking, chunks: [Int]) throws {
         precondition(chunks.count == dimensions.count, "Chunk dimensions must have the same amount of elements as variable dimensions")
-        try Nc.def_var_chunking(ncid: group.ncid, varid: varid, type: chunking, chunks: chunks)
+        try group.ncid.def_var_chunking(varid: varid, type: chunking, chunks: chunks)
     }
     
     /**
@@ -98,7 +98,7 @@ public struct Variable {
      Checksums require chunked data. If this function is called on a variable with contiguous data, then the data is changed to chunked data, with default chunksizes. Use nc_def_var_chunking() to tune performance with user-defined chunksizes.
      */
     public func defineChecksuming(enable: Bool) throws {
-        try Nc.def_var_flechter32(ncid: group.ncid, varid: varid, enable: enable)
+        try group.ncid.def_var_flechter32(varid: varid, enable: enable)
     }
     
     /**
@@ -111,14 +111,14 @@ public struct Variable {
      This function may only be called after the variable is defined, but before nc_enddef is called.
      */
     public func defineEndian(endian: Endian) throws {
-        try Nc.def_var_endian(ncid: group.ncid, varid: varid, type: endian)
+        try group.ncid.def_var_endian(varid: varid, type: endian)
     }
     
     /**
      Define a new variable filter.
      */
     public func defineFilter(id: UInt32, params: [UInt32]) throws {
-        try Nc.def_var_filter(ncid: group.ncid, varid: varid, id: id, params: params)
+        try group.ncid.def_var_filter(varid: varid, id: id, params: params)
     }
     
     
@@ -165,7 +165,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         let n_elements = count.reduce(1, *)
         
         return try T.createFromBuffer(length: n_elements) { ptr in
-            try Nc.get_vara(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, buffer: ptr)
+            try variable.group.ncid.get_vara(varid: variable.varid, offset: offset, count: count, buffer: ptr)
         }
     }
     
@@ -176,7 +176,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         let n_elements = count.reduce(1, *)
         
         return try T.createFromBuffer(length: n_elements) { ptr in
-            try Nc.get_vars(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, stride: stride, buffer: ptr)
+            try variable.group.ncid.get_vars(varid: variable.varid, offset: offset, count: count, stride: stride, buffer: ptr)
         }
     }
     
@@ -201,7 +201,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         assert(variable.dimensions.count == offset.count)
         assert(variable.dimensions.count == count.count)
         try T.withPointer(to: data) { ptr in
-            try Nc.put_vara(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, ptr: ptr)
+            try variable.group.ncid.put_vara(varid: variable.varid, offset: offset, count: count, ptr: ptr)
         }
     }
     
@@ -211,7 +211,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
         assert(variable.dimensions.count == count.count)
         assert(variable.dimensions.count == stride.count)
         try T.withPointer(to: data) { ptr in
-            try Nc.put_vars(ncid: variable.group.ncid, varid: variable.varid, offset: offset, count: count, stride: stride, ptr: ptr)
+            try variable.group.ncid.put_vars(varid: variable.varid, offset: offset, count: count, stride: stride, ptr: ptr)
         }
     }
 }

@@ -115,18 +115,9 @@ group: / {
         let udata64 = try file.getAttribute("TEST_INT64")!.read()! as [UInt]
         XCTAssertEqual(udata64, [123, 345, 18446744073709550938, 9223372036854775808, 9223372036854775807])
     }
-    
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(SwiftNetCDF().text, "Hello, World!")
-        //XCTAssertEqual(SwiftNetCDF().netCDFVersion, "4.6.3 of May  8 2019 00:09:03 $")
-    }
 
     static var allTests = [
         ("testCreateSimple", testCreateSimple),
         ("testAttributes", testAttributes),
-        ("testExample", testExample),
     ]
 }

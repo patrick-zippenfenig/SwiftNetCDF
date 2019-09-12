@@ -13,7 +13,7 @@ import Foundation
 }*/
 
 public struct Dimension {
-    let dimid: Int32
+    let dimid: DimId
     let name: String
     
     /// length my be updated for unlimited dimensions
@@ -24,8 +24,8 @@ public struct Dimension {
     /**
      Initialise from existing dimension ID. isUlimited must be supplied, because it can not be self discovered.
      */
-    init(fromDimId dimid: Int32, isUnlimited: Bool, group: Group) throws {
-        let diminq = try Nc.inq_dim(ncid: group.ncid, dimid: dimid)
+    init(fromDimId dimid: DimId, isUnlimited: Bool, group: Group) throws {
+        let diminq = try group.ncid.inq_dim(dimid: dimid)
         self.dimid = dimid
         self.name = diminq.name
         self.length = diminq.length
@@ -37,7 +37,7 @@ public struct Dimension {
      TODO: Consider using a enum for length or unlimited
      */
     init(group: Group, name: String, length: Int, isUnlimited: Bool) throws {
-        self.dimid = try Nc.def_dim(ncid: group.ncid, name: name, length: isUnlimited ? Nc.NC_UNLIMITED : length)
+        self.dimid = try group.ncid.def_dim(name: name, length: isUnlimited ? Nc.NC_UNLIMITED : length)
         self.name = name
         self.length = length
         self.isUnlimited = isUnlimited

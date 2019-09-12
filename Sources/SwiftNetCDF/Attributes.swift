@@ -11,7 +11,7 @@ import Foundation
  NetCDF groups and variables provide attributes. This protocol abstracts the attribute logic.
  */
 public protocol AttributeProvider {
-    var varid: Int32 { get } // could be NC_GLOBAL
+    var varid: VarId { get } // could be NC_GLOBAL
     var group: Group { get }
     
     /// groups and variables have differnet ways to get the attributes count
@@ -21,7 +21,7 @@ public protocol AttributeProvider {
 extension AttributeProvider {
     public func getAttributes() throws -> [Attribute<Self>] {
         return try (0..<numberOfAttributes).map {
-            try getAttribute(try Nc.inq_attname(ncid: group.ncid, varid: varid, attid: $0))!
+            try getAttribute(try group.ncid.inq_attname(varid: varid, attid: $0))!
         }
     }
     
@@ -42,7 +42,7 @@ extension AttributeProvider {
     
     /// Set a netcdf attribute from raw pointer type
     public func setAttributeRaw(name: String, type: DataType, length: Int, ptr: UnsafeRawPointer) throws {
-        try Nc.put_att(ncid: group.ncid, varid: varid, name: name, type: type.typeid, length: length, ptr: ptr)
+        try group.ncid.put_att(varid: varid, name: name, type: type.typeid, length: length, ptr: ptr)
     }
 }
 
@@ -54,7 +54,7 @@ public struct Attribute<Parent: AttributeProvider> {
     
     init?(fromExistingName name: String, parent: Parent) throws {
         do {
-            let attinq = try Nc.inq_att(ncid: parent.group.ncid, varid: parent.varid, name: name)
+            let attinq = try parent.group.ncid.inq_att(varid: parent.varid, name: name)
             self.parent = parent
             self.length = attinq.length
             self.type = try DataType(fromTypeId: attinq.typeid, group: parent.group)
@@ -80,11 +80,11 @@ public struct Attribute<Parent: AttributeProvider> {
     
     /// Read the raw into a prepared pointer
     public func readRaw(into buffer: UnsafeMutableRawPointer) throws {
-        try Nc.get_att(ncid: parent.group.ncid, varid: parent.varid, name: name, buffer: buffer)
+        try parent.group.ncid.get_att(varid: parent.varid, name: name, buffer: buffer)
     }
     
     public func to<T: NetcdfConvertible>(type _: T.Type) -> AttributeGeneric<T>? {
-        guard T.netcdfType.rawValue == self.type.typeid else {
+        guard T.netcdfType.typeId == self.type.typeid else {
             return nil
         }
         return AttributeGeneric()

@@ -15,9 +15,9 @@ public enum DataType {
     case primitive(ExternalDataType)
     case userDefined(UserDefinedType)
     
-    var typeid: Int32 {
+    var typeid: TypeId {
         switch self {
-        case .primitive(let type): return type.rawValue
+        case .primitive(let type): return type.typeId
         case .userDefined(let userDefined): return userDefined.typeid
         }
     }
@@ -29,13 +29,13 @@ public enum DataType {
     }
     var byteSize: Int { fatalError() }
     
-    init(fromTypeId typeid: Int32, group: Group) throws {
-        if let primitve = ExternalDataType(rawValue: typeid) {
+    init(fromTypeId typeid: TypeId, group: Group) throws {
+        if let primitve = ExternalDataType(rawValue: typeid.typeid) {
             self = DataType.primitive(primitve)
             return
         }
         
-        let typeInq = try Nc.inq_user_type(ncid: group.ncid, typeid: typeid)
+        let typeInq = try group.ncid.inq_user_type(typeid: typeid)
         // TODO switch user types
         fatalError()
         
@@ -48,14 +48,14 @@ public enum UserDefinedType {
     case opaque(Opaque)
     case variableLength(VariableLength)
     
-    var typeid: Int32 { fatalError() }
+    var typeid: TypeId { fatalError() }
     var byteSize: Int { fatalError() }
     var name: String { fatalError() }
 }
 
 public struct Compound {
     let group: Group
-    let typeid: Int32
+    let typeid: TypeId
     let name: String
     let size: Int
     let numerOfFields: Int
@@ -63,14 +63,14 @@ public struct Compound {
 
 public struct Opaque {
     let group: Group
-    let typeid: Int32
+    let typeid: TypeId
     let name: String
     let size: Int
 }
 
 public struct Enumeration {
     let group: Group
-    let typeid: Int32
+    let typeid: TypeId
     let name: String
     let size: Int
     let numerOfFields: Int
@@ -78,7 +78,7 @@ public struct Enumeration {
 
 public struct VariableLength {
     let group: Group
-    let typeid: Int32
+    let typeid: TypeId
     let name: String
     let size: Int
     let baseTypeId: Int32

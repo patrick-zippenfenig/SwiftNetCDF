@@ -22,19 +22,19 @@ public final class File {
 public final class Group {
     let parent: Group?
     /// id of the group
-    let ncid: Int32
+    let ncid: NcId
     let name: String
     
     /// Existing group from ID.
-    init(ncid: Int32, parent: Group?) throws {
+    init(ncid: NcId, parent: Group?) throws {
         self.parent = parent
         self.ncid = ncid
-        self.name = try Nc.inq_grpname(ncid: ncid)
+        self.name = try ncid.inq_grpname()
     }
     
     /// Create a new group
     init(name: String, parent: Group) throws {
-        self.ncid = try Nc.def_grp(ncid: parent.ncid, name: name)
+        self.ncid = try parent.ncid.def_grp(name: name)
         self.parent = parent
         self.name = name
     }
@@ -42,7 +42,7 @@ public final class Group {
     /// Close the netcdf file if this is the last group
     deinit {
         if parent == nil {
-            try? Nc.close(ncid: ncid)
+            try? ncid.close()
         }
     }
     
@@ -68,15 +68,15 @@ public final class Group {
     
     /// Return all dimensions registered in this group
     public func getDimensions() throws -> [Dimension] {
-        let ids = try Nc.inq_dimids(ncid: ncid, includeParents: false)
-        let unlimited = try Nc.inq_unlimdims(ncid: ncid)
+        let ids = try ncid.inq_dimids( includeParents: false)
+        let unlimited = try ncid.inq_unlimdims()
         return try ids.map { try Dimension(fromDimId: $0, isUnlimited: unlimited.contains($0), group: self) }
     }
     
     /// Try to open an exsiting variable. Nil if it does not exist
     public func getVariable(byName name: String) throws -> Variable? {
         do {
-            let varid = try Nc.inq_varid(ncid: ncid, name: name)
+            let varid = try ncid.inq_varid(name: name)
             return try Variable(fromVarId: varid, group: self)
         } catch (NetCDFError.invalidVariable) {
             return nil
@@ -85,7 +85,7 @@ public final class Group {
     
     /// Get all varibales in the group
     public func getVariables() throws -> [Variable] {
-        let ids = try Nc.inq_varids(ncid: ncid)
+        let ids = try ncid.inq_varids()
         return try ids.map { try Variable(fromVarId: $0, group: self) }
     }
     
@@ -102,7 +102,7 @@ public final class Group {
     /// Try to open an exsisting subgroup. Nil if it does not exist
     public func getGroup(byName name: String) throws -> Group? {
         do {
-            let groupId = try Nc.inq_grp_ncid(ncid: ncid, name: name)
+            let groupId = try ncid.inq_grp_ncid(name: name)
             return try Group(ncid: groupId, parent: self)
         } catch (NetCDFError.badNcid) { // TODO check which error is used
             return nil
@@ -116,7 +116,7 @@ public final class Group {
     
     /// Get all subgroups
     public func getGroups() throws -> [Group] {
-        let ids = try Nc.inq_grps(ncid: ncid)
+        let ids = try ncid.inq_grps()
         return try ids.map { try Group(ncid: $0, parent: self) }
     }
     
@@ -129,12 +129,12 @@ public final class Group {
     
     public func sync() {
         // Throws only an exception if ncid is invalid
-        try! Nc.sync(ncid: ncid)
+        try! ncid.sync()
     }
 }
 
 extension Group: AttributeProvider {
-    public var varid: Int32 {
+    public var varid: VarId {
         return Nc.NC_GLOBAL
     }
     
@@ -143,6 +143,6 @@ extension Group: AttributeProvider {
     }
     
     public var numberOfAttributes: Int32 {
-        return try! Nc.inq_natts(ncid: ncid)
+        return try! ncid.inq_natts()
     }
 }
