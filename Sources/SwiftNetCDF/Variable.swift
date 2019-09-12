@@ -58,8 +58,18 @@ public struct Variable {
      Deflation and shuffline require chunked data. If this function is called on a variable with contiguous data, then the data is changed to chunked data, with default chunksizes. Use defineChunks() to tune performance with user-defined chunksizes.
      
      If this function is called on a scalar variable, it is ignored.
+     
+     - Parameters:
+        - enable: True to turn on deflation for this variable.
+        - level: Compression level between 0 (no compression) and 9 (maximum compression). Default 6.
+        - shuffle: True to turn on the shuffle filter. The shuffle filter can assist with the compression of integer data by changing the byte order in the data stream. It makes no sense to use the shuffle filter without setting a deflate level, or to use shuffle on non-integer data.
+     
+     - Throws:
+        - `NetCDFError.badNcid`
+        - `NetCDFError.badVarid`
+        - ...
      */
-    public func defineCompression(enable: Bool, level: Int = 6, shuffle: Bool = false) throws {
+    public func defineDeflate(enable: Bool, level: Int = 6, shuffle: Bool = false) throws {
         try netcdfLock.def_var_deflate(ncid: group.ncid, varid: varid, shuffle: shuffle, deflate: enable, deflate_level: Int32(level))
     }
     
@@ -75,12 +85,18 @@ public struct Variable {
      
      Note that this does not work for scalar variables. Only non-scalar variables can have chunking.
      */
-    public func defineChunks(chunking: Chunking, chunks: [Int]) throws {
+    public func defineChunking(chunking: Chunking, chunks: [Int]) throws {
         precondition(chunks.count == dimensions.count, "Chunk dimensions must have the same amount of elements as variable dimensions")
         try netcdfLock.def_var_chunking(ncid: group.ncid, varid: varid, type: chunking, chunks: chunks)
     }
     
-    
+    /**
+     Set checksum for a var.
+     
+     This function must be called after nc_def_var and before nc_enddef or any functions which writes data to the file.
+     
+     Checksums require chunked data. If this function is called on a variable with contiguous data, then the data is changed to chunked data, with default chunksizes. Use nc_def_var_chunking() to tune performance with user-defined chunksizes.
+     */
     public func defineChecksuming(enable: Bool) throws {
         try netcdfLock.def_var_flechter32(ncid: group.ncid, varid: varid, enable: enable)
     }
