@@ -52,7 +52,7 @@ guard let title: String = try file.getAttribute("TITLE")?.read() else {
     fatalError("TITLE attribute not available or not a String")
 }
 
-guard let variable = file.getVariable(byName: "MyData") else {
+guard let variable = file.getVariable(name: "MyData") else {
     fatalError("No variable named MyData available")
 }
 guard let typedVariable = variable.asType(Int32.self) else {
@@ -102,7 +102,7 @@ XCTAssertEqual(data.variable.dimensionsFlat, [10, 200])
 
 4. Discover the structure of a NetCDF file
 
-```
+```swift
 import SwiftNetCDF
 
 /// Recursively print all groups

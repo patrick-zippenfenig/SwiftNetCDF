@@ -29,7 +29,7 @@ final class SwiftNetCDFTests: XCTestCase {
         }
         XCTAssertEqual(title, "My data set")
         
-        guard let variable2 = file2.getVariable(byName: "MyData") else {
+        guard let variable2 = file2.getVariable(name: "MyData") else {
             fatalError("No variable named MyData available")
         }
         guard let typedVariable = variable2.asType(Int32.self) else {
@@ -111,18 +111,18 @@ final class SwiftNetCDFTests: XCTestCase {
         let group1 = try file.createGroup(name: "GROUP1")
         XCTAssertNotNil(file.getGroup(name: "GROUP1"))
         XCTAssertNil(file.getGroup(name: "NotExistingGroup"))
-        XCTAssertNil(file.getVariable(byName: "TEST_VAR"))
+        XCTAssertNil(file.getVariable(name: "TEST_VAR"))
         let dim = try file.createDimension(name: "MYDIM", length: 5)
         let _ = try file.createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [dim])
-        XCTAssertNotNil(file.getVariable(byName: "TEST_VAR"))
+        XCTAssertNotNil(file.getVariable(name: "TEST_VAR"))
         
         /// Subgrup in subgroup
         XCTAssertNil(group1.getGroup(name: "GROUP1_1"))
         let group1_1 = try group1.createGroup(name: "GROUP1_1")
         XCTAssertNotNil(group1.getGroup(name: "GROUP1_1"))
-        XCTAssertNil(group1_1.getVariable(byName: "TEST_VAR"))
+        XCTAssertNil(group1_1.getVariable(name: "TEST_VAR"))
         let _ = try group1_1.createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [dim])
-        XCTAssertNotNil(group1_1.getVariable(byName: "TEST_VAR"))
+        XCTAssertNotNil(group1_1.getVariable(name: "TEST_VAR"))
     }
     
     /// TODO unit test for subgroups.. also chech missing

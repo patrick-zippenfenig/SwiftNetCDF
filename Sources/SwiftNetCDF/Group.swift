@@ -48,7 +48,7 @@ public final class Group {
     }
     
     /// Try to open an exsiting variable. Nil if it does not exist
-    public func getVariable(byName name: String) -> Variable? {
+    public func getVariable(name: String) -> Variable? {
         guard let varid = ncid.inq_varid(name: name) else {
             return nil
         }
