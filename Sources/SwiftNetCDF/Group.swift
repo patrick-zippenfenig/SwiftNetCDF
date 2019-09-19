@@ -38,26 +38,6 @@ public final class Group {
         }
     }
     
-    /// Return the (CDL Common Data Language) representation
-    /*public func getCdl(headerOnly: Bool = true, indent: Int = 0) -> String {
-        var out = ""
-        let ind = String(repeating: " ", count: indent)
-        let dimensions = getDimensions()
-        out += "\(ind)group: \(name) {\n"
-        out += "\(ind)  dimensions:\n"
-        dimensions.forEach {
-            out += "\(ind)        \($0.getCdl())\n"
-        }
-        
-        let variables = getVariables()
-        out += "\(ind)  variables:\n"
-        variables.forEach {
-            out += $0.getCdl(indent: indent+8)
-        }
-        out += "\(ind)  } // group \(name)"
-        return out
-    }*/
-    
     /// Return all dimensions registered in this group
     public func getDimensions() -> [Dimension] {
         let ids = ncid.inq_dimids(includeParents: false)

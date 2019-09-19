@@ -38,19 +38,6 @@ final class SwiftNetCDFTests: XCTestCase {
         let data2 = try typedVariable.read(offset: [1,1], count: [2,2])
         
         XCTAssertEqual([6, 7, 11, 12], data2)
-        
-        
-        // Compare the CDL notation of this file
-        /*let cdl = """
-group: / {
-  dimensions:
-        LAT = 10 ;
-        LON = 5 ;
-  variables:
-        int32 MyData(LAT, LON) ;
-  } // group /
-"""
-        XCTAssertEqual(cdl, file2.getCdl())*/
     }
     
     /**
