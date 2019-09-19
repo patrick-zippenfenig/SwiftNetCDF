@@ -55,24 +55,24 @@ final class SwiftNetCDFTests: XCTestCase {
         try lats.write((0..<10).map(Float.init))
         try lons.write((0..<5).map(Float.init))
         
-        // `data` is of type `VariableGeneric<Float>`. Define functions can be accessed via `data.variable`
+        // `data` is of type `VariableGeneric<Float>`
         var data = try subGroup.createVariable(name: "DATA", type: Float.self, dimensions: [dimLat, dimLon])
         
         // Enable compression, shuffle filter and chunking
-        try data.variable.defineDeflate(enable: true, level: 6, shuffle: true)
-        try data.variable.defineChunking(chunking: .chunked, chunks: [1, 5])
+        try data.defineDeflate(enable: true, level: 6, shuffle: true)
+        try data.defineChunking(chunking: .chunked, chunks: [1, 5])
         
         /// Because the latitude dimension is unlimted, we can write more than the defined size
         let array = (0..<1000).map(Float.init)
         try data.write(array, offset: [0, 0], count: [10, 100])
         
         /// The check the new dimension count
-        XCTAssertEqual(data.variable.dimensionsFlat, [10, 100])
+        XCTAssertEqual(data.dimensionsFlat, [10, 100])
         
         // even more data at an offset
         try data.write(array, offset: [0, 100], count: [10, 100])
         
-        XCTAssertEqual(data.variable.dimensionsFlat, [10, 200])
+        XCTAssertEqual(data.dimensionsFlat, [10, 200])
         
         
         /// Recursively print all groups
