@@ -9,7 +9,7 @@ final class SwiftNetCDFTests: XCTestCase {
     func testCreateSimple() throws {
         let data = (Int32(0)..<50).map{$0}
         
-        let file = try File.create(path: "test.nc", overwriteExisting: true)
+        let file = try NetCDF.create(path: "test.nc", overwriteExisting: true)
         try file.setAttribute("TITLE", "My data set")
         
         let dimensions = [
@@ -23,7 +23,7 @@ final class SwiftNetCDFTests: XCTestCase {
         
         
         // Open the same file again and read the data
-        let file2 = try File.open(path: "test.nc", allowWrite: false)
+        let file2 = try NetCDF.open(path: "test.nc", allowWrite: false)
         guard let title: String = try file2.getAttribute("TITLE")?.read() else {
             fatalError("TITLE attribute not available or not a String")
         }
@@ -41,7 +41,7 @@ final class SwiftNetCDFTests: XCTestCase {
     }
     
     func testCreateGroups() throws {
-        let file = try File.create(path: "test.nc", overwriteExisting: true)
+        let file = try NetCDF.create(path: "test.nc", overwriteExisting: true)
         
         // Create new group. Analog the `getGroup(name: )` function can be used for existing groups
         let subGroup = try file.createGroup(name: "GROUP1")
@@ -107,7 +107,7 @@ final class SwiftNetCDFTests: XCTestCase {
      Test groups with subgroups
      */
     func testGroups() throws {
-        let file = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let file = try NetCDF.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         let group1 = try file.createGroup(name: "GROUP1")
         XCTAssertNotNil(file.getGroup(name: "GROUP1"))
         XCTAssertNil(file.getGroup(name: "NotExistingGroup"))
@@ -132,7 +132,7 @@ final class SwiftNetCDFTests: XCTestCase {
      */
     func testAttributes() throws {
         let data_float = [Float(42), 34, 123]
-        let file_raw = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
+        let file_raw = try NetCDF.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         let variable = try file_raw.createGroup(name: "TEST").createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [try file_raw.createDimension(name: "MYDIM", length: 5)])
         let file = variable.variable
         

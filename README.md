@@ -28,7 +28,7 @@ import SwiftNetCDF
 
 let data = [Int32(0), 3, 4, 6, 12, 45, 89, ...]
 
-var file = try File.create(path: "test.nc", overwriteExisting: true)
+var file = try NetCDF.create(path: "test.nc", overwriteExisting: true)
 
 try file.setAttribute("TITLE", "My data set")
 
@@ -46,7 +46,7 @@ try variable.write(data)
 ```swift
 import SwiftNetCDF
 
-let file = try File.open(path: "test.nc", allowWrite: false)
+let file = try NetCDF.open(path: "test.nc", allowWrite: false)
 
 guard let title: String = try file.getAttribute("TITLE")?.read() else {
     fatalError("TITLE attribute not available or not a String")
@@ -66,7 +66,7 @@ let data2 = try typedVariable.read(offset: [1,1], count: [2,2])
 ```swift
 import SwiftNetCDF
 
-let file = try File.create(path: "test.nc", overwriteExisting: true)
+let file = try NetCDF.create(path: "test.nc", overwriteExisting: true)
 
 // Create new group. Analog the `getGroup(name: )` function can be used for existing groups
 let subGroup = try file.createGroup(name: "GROUP1")
@@ -104,6 +104,8 @@ XCTAssertEqual(data.variable.dimensionsFlat, [10, 200])
 
 ```swift
 import SwiftNetCDF
+
+let file = try NetCDF.open(path: "test.nc", allowWrite: false)
 
 /// Recursively print all groups
 func printGroup(_ group: Group) {

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  NetCDF.swift
 //  SwiftNetCDF
 //
 //  Created by Patrick Zippenfenig on 2019-09-10.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public final class File {
+public final class NetCDF {
     /**
      Create a new netCDF file.
      

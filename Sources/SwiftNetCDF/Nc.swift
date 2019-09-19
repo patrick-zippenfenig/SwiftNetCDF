@@ -49,13 +49,21 @@ public enum NetCDFError: Error {
         case NC_EHDFERR: self = .hdf5Error
         case NC_EDIMMETA: self = .netCDF4MetedataError
         case NC_EEXIST: self = .alreadyExists
-        default:
-            let error = String(cString: nc_strerror(ncerr))
-            self = .ncerror(code: ncerr, error: error)
+        default: self = .ncerror(code: ncerr, error: nc_stringError(ncerr))
         }
     }
 }
 
+/**
+ Get a the error message for a code as a Swift String
+ */
+fileprivate func nc_stringError(_ ncerr: Int32) -> String {
+    return String(cString: nc_strerror(ncerr))
+}
+
+/**
+ The TypeId initiliser is only available in this file.
+ */
 public extension ExternalDataType {
     var typeId: TypeId {
         return TypeId(rawValue)
