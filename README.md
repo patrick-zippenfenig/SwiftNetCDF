@@ -100,6 +100,54 @@ try data.write(array, offset: [0, 100], count: [10, 100])
 XCTAssertEqual(data.variable.dimensionsFlat, [10, 200])
 ```
 
+4. Discover the structure of a NetCDF file
+
+```
+import SwiftNetCDF
+
+/// Recursively print all groups
+func printGroup(_ group: Group) {
+    print("Group: \(group.name)")
+    
+    for d in group.getDimensions() {
+        print("Dimension: \(d.name) \(d.length) \(d.isUnlimited)")
+    }
+    
+    for v in group.getVariables() {
+        print("Variable: \(v.name) \(v.type.asExternalDataType()!)")
+        for d in v.dimensions {
+            print("Variable dimension: \(d.name) \(d.length) \(d.isUnlimited)")
+        }
+    }
+    
+    for a in try! group.getAttributes() {
+        print("Attribute: \(a.name) \(a.length) \(a.type.asExternalDataType()!)")
+    }
+    
+    for subgroup in group.getGroups() {
+        printGroup(subgroup)
+    }
+}
+
+// The root entry point of a NetCDF file is also a `Group`
+printGroup(file)
+```
+
+Output:
+```
+Group: /
+Group: GROUP1
+Dimension: LAT 10 false
+Dimension: LON 200 true
+Variable: LATITUDES float
+Variable dimension: LAT 10 false
+Variable: LONGITUDES float
+Variable dimension: LON 200 true
+Variable: DATA float
+Variable dimension: LAT 10 false
+Variable dimension: LON 200 true
+```
+
 
 ## Features
 - Abstract Swift data types to NetCDF external types
