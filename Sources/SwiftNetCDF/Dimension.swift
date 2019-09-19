@@ -12,8 +12,8 @@ public struct Dimension {
     public let dimid: DimId
     public let name: String
     
-    /// length my be updated for unlimited dimensions
-    public let length: Int
+    /// length may be updated for unlimited dimensions
+    public var length: Int
     
     public let isUnlimited: Bool
     
@@ -26,6 +26,12 @@ public struct Dimension {
         self.name = diminq.name
         self.length = diminq.length
         self.isUnlimited = isUnlimited
+    }
+    
+    /// Update the dimension length in case the variable was updated
+    internal mutating func update(group: Group) {
+        let diminq = group.ncid.inq_dim(dimid: dimid)
+        self.length = diminq.length
     }
     
     /**

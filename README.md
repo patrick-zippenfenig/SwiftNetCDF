@@ -28,7 +28,7 @@ import SwiftNetCDF
 
 let data = [Int32(0), 3, 4, 6, 12, 45, 89, ...]
 
-let file = try File.create(path: "test.nc", overwriteExisting: true)
+var file = try File.create(path: "test.nc", overwriteExisting: true)
 
 try file.setAttribute("TITLE", "My data set")
 
@@ -61,17 +61,54 @@ guard let typedVariable = variable.asType(Int32.self) else {
 let data2 = try typedVariable.read(offset: [1,1], count: [2,2])
 ```
 
+3. Using groups, unlimited dimensions and compression
+
+```swift
+import SwiftNetCDF
+
+let file = try File.create(path: "test.nc", overwriteExisting: true)
+
+// Create new group. Analog the `getGroup(name: )` function can be used for existing groups
+let subGroup = try file.createGroup(name: "GROUP1")
+
+let dimLat = try subGroup.createDimension(name: "LAT", length: 10)
+let dimLon = try subGroup.createDimension(name: "LON", length: 5, isUnlimited: true)
+
+var lats = try subGroup.createVariable(name: "LATITUDES", type: Float.self, dimensions: [dimLat])
+var lons = try subGroup.createVariable(name: "LONGITUDES", type: Float.self, dimensions: [dimLon])
+
+try lats.write((0..<10).map(Float.init))
+try lons.write((0..<5).map(Float.init))
+
+// `data` is of type `VariableGeneric<Float>`. Define functions can be accessed via `data.variable`
+var data = try subGroup.createVariable(name: "DATA", type: Float.self, dimensions: [dimLat, dimLon])
+
+// Enable compression, shuffle filter and chunking
+try data.variable.defineDeflate(enable: true, level: 6, shuffle: true)
+try data.variable.defineChunking(chunking: .chunked, chunks: [1, 5])
+
+/// Because the latitude dimension is unlimted, we can write more than the defined size
+let array = (0..<1000).map(Float.init)
+try data.write(array, offset: [0, 0], count: [10, 100])
+
+/// The check the new dimension count
+XCTAssertEqual(data.variable.dimensionsFlat, [10, 100])
+
+// even more data at an offset
+try data.write(array, offset: [0, 100], count: [10, 100])
+
+XCTAssertEqual(data.variable.dimensionsFlat, [10, 200])
+```
+
+
 ## Features
 - Abstract Swift data types to NetCDF external types
 - Supported data types: `Float`, `Double`, `String`, `Int8`, `Int16`, `Int32`, `Int64`, `Int`, `UInt16`, `UInt32`, `UInt64` and `UInt`
 - Throws NetCDF library errors as exceptions
-- Thread safe. Access to the netCDF C API is serialised with locks.
+- Thread safe. Access to the netCDF C API is serialised with thread locks
 
 ## Limitations
 - User defined data tyes not yet implemented
-
-## Roadmap
-- Data type conversions
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.

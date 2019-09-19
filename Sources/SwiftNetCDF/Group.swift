@@ -72,7 +72,7 @@ public final class Group {
     }
     
     /// Try to open an exsisting subgroup. Nil if it does not exist
-    public func getGroup(byName name: String) -> Group? {
+    public func getGroup(name: String) -> Group? {
         guard let groupId = ncid.inq_grp_ncid(name: name) else {
             return nil
         }

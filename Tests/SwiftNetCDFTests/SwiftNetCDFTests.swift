@@ -17,7 +17,7 @@ final class SwiftNetCDFTests: XCTestCase {
             try file.createDimension(name: "LON", length: 5)
         ]
         
-        let variable = try file.createVariable(name: "MyData", type: Int32.self, dimensions: dimensions)
+        var variable = try file.createVariable(name: "MyData", type: Int32.self, dimensions: dimensions)
         try variable.write(data)
         file.sync()
         
@@ -40,23 +40,58 @@ final class SwiftNetCDFTests: XCTestCase {
         XCTAssertEqual([6, 7, 11, 12], data2)
     }
     
+    func testCreateGroups() throws {
+        let file = try File.create(path: "test.nc", overwriteExisting: true)
+        
+        // Create new group. Analog the `getGroup(name: )` function can be used for existing groups
+        let subGroup = try file.createGroup(name: "GROUP1")
+        
+        let dimLat = try subGroup.createDimension(name: "LAT", length: 10)
+        let dimLon = try subGroup.createDimension(name: "LON", length: 5, isUnlimited: true)
+        
+        var lats = try subGroup.createVariable(name: "LATITUDES", type: Float.self, dimensions: [dimLat])
+        var lons = try subGroup.createVariable(name: "LONGITUDES", type: Float.self, dimensions: [dimLon])
+        
+        try lats.write((0..<10).map(Float.init))
+        try lons.write((0..<5).map(Float.init))
+        
+        // `data` is of type `VariableGeneric<Float>`. Define functions can be accessed via `data.variable`
+        var data = try subGroup.createVariable(name: "DATA", type: Float.self, dimensions: [dimLat, dimLon])
+        
+        // Enable compression, shuffle filter and chunking
+        try data.variable.defineDeflate(enable: true, level: 6, shuffle: true)
+        try data.variable.defineChunking(chunking: .chunked, chunks: [1, 5])
+        
+        /// Because the latitude dimension is unlimted, we can write more than the defined size
+        let array = (0..<1000).map(Float.init)
+        try data.write(array, offset: [0, 0], count: [10, 100])
+        
+        /// The check the new dimension count
+        XCTAssertEqual(data.variable.dimensionsFlat, [10, 100])
+        
+        // even more data at an offset
+        try data.write(array, offset: [0, 100], count: [10, 100])
+        
+        XCTAssertEqual(data.variable.dimensionsFlat, [10, 200])
+    }
+    
     /**
      Test groups with subgroups
      */
     func testGroups() throws {
         let file = try File.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         let group1 = try file.createGroup(name: "GROUP1")
-        XCTAssertNotNil(file.getGroup(byName: "GROUP1"))
-        XCTAssertNil(file.getGroup(byName: "NotExistingGroup"))
+        XCTAssertNotNil(file.getGroup(name: "GROUP1"))
+        XCTAssertNil(file.getGroup(name: "NotExistingGroup"))
         XCTAssertNil(file.getVariable(byName: "TEST_VAR"))
         let dim = try file.createDimension(name: "MYDIM", length: 5)
         let _ = try file.createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [dim])
         XCTAssertNotNil(file.getVariable(byName: "TEST_VAR"))
         
         /// Subgrup in subgroup
-        XCTAssertNil(group1.getGroup(byName: "GROUP1_1"))
+        XCTAssertNil(group1.getGroup(name: "GROUP1_1"))
         let group1_1 = try group1.createGroup(name: "GROUP1_1")
-        XCTAssertNotNil(group1.getGroup(byName: "GROUP1_1"))
+        XCTAssertNotNil(group1.getGroup(name: "GROUP1_1"))
         XCTAssertNil(group1_1.getVariable(byName: "TEST_VAR"))
         let _ = try group1_1.createVariable(name: "TEST_VAR", type: Int32.self, dimensions: [dim])
         XCTAssertNotNil(group1_1.getVariable(byName: "TEST_VAR"))

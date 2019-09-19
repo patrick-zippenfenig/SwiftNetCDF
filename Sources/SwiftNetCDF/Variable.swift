@@ -12,10 +12,18 @@ public struct Variable {
     public let group: Group
     public let name: String
     public let varid: VarId
-    public let dimensions: [Dimension]
+    public var dimensions: [Dimension]
     public let type: TypeId
     
-    public var count: Int { return dimensions.reduce(1, {$0 * $1.length}) }
+    /// Number of elements in all dimensions
+    public var count: Int {
+        return dimensions.reduce(1, {$0 * $1.length})
+    }
+    
+    /// Dimensions array with only the amount of elements in each dimension
+    public var dimensionsFlat: [Int] {
+        return dimensions.map { $0.length }
+    }
     
     /**
      Initialise from an existing variable id
@@ -155,7 +163,7 @@ public struct Variable {
     }
     
     /// Unsafe because the data length is not validated.
-    func writeUnsafe(from: UnsafeRawPointer, offset: [Int], count: [Int]) throws {
+    mutating func writeUnsafe(from: UnsafeRawPointer, offset: [Int], count: [Int]) throws {
         guard dimensions.count == offset.count else {
             throw NetCDFError.numberOfDimensionsInvalid
         }
@@ -163,10 +171,13 @@ public struct Variable {
             throw NetCDFError.numberOfDimensionsInvalid
         }
         try varid.put_vara(offset: offset, count: count, ptr: from)
+        for i in dimensions.indices {
+            dimensions[i].update(group: group)
+        }
     }
     
     /// Unsafe because the data length is not validated.
-    func writeUnsafe(from: UnsafeRawPointer, offset: [Int], count: [Int], stride: [Int]) throws {
+    mutating func writeUnsafe(from: UnsafeRawPointer, offset: [Int], count: [Int], stride: [Int]) throws {
         guard dimensions.count == offset.count else {
             throw NetCDFError.numberOfDimensionsInvalid
         }
@@ -177,6 +188,9 @@ public struct Variable {
             throw NetCDFError.numberOfDimensionsInvalid
         }
         try varid.put_vars(offset: offset, count: count, stride: stride, ptr: from)
+        for i in dimensions.indices {
+            dimensions[i].update(group: group)
+        }
     }
 }
 
@@ -189,10 +203,9 @@ extension Variable: AttributeProvider {
 
 
 /// A generic netcdf variable of a fixed data type
-/// - TODO: functions should also be exposed to Variable generic
 public struct VariableGeneric<T: NetcdfConvertible> {
     /// The non generic underlaying variable
-    public let variable: Variable
+    public var variable: Variable
     
     public init(variable: Variable) {
         self.variable = variable
@@ -222,7 +235,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
     }
     
     /// Write a complete array to the file. The array must be as large as the defined dimensions
-    public func write(_ data: [T]) throws {
+    public mutating func write(_ data: [T]) throws {
         guard variable.count == data.count else {
             throw NetCDFError.numberOfElementsInvalid
         }
@@ -232,14 +245,14 @@ public struct VariableGeneric<T: NetcdfConvertible> {
     }
     
     /// Write only a defined subset specified by offset and count
-    public func write(_ data: [T], offset: [Int], count: [Int]) throws {
+    public mutating func write(_ data: [T], offset: [Int], count: [Int]) throws {
         try T.withPointer(to: data) { ptr in
             try variable.writeUnsafe(from: ptr, offset: offset, count: count)
         }
     }
     
     /// Write only a defined subset specified by offset, count and stride
-    public func write(_ data: [T], offset: [Int], count: [Int], stride: [Int]) throws {
+    public mutating func write(_ data: [T], offset: [Int], count: [Int], stride: [Int]) throws {
         try T.withPointer(to: data) { ptr in
             try variable.writeUnsafe(from: ptr, offset: offset, count: count, stride: stride)
         }
