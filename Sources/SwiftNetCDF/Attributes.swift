@@ -27,7 +27,8 @@ extension AttributeProvider {
     }
     
     /// Get an attribute by name. Nil if it does not exist.
-    public func getAttribute(_ key: String) throws -> Attribute<Self>? {
+    /// This function is inlinable to allow type specialisation across modules at compile time
+    @inlinable public func getAttribute(_ key: String) throws -> Attribute<Self>? {
         return try Attribute(fromExistingName: key, parent: self)
     }
     
@@ -45,7 +46,7 @@ extension AttributeProvider {
     }
     
     /// Set a netcdf attribute from raw pointer type
-    public func setAttributeRaw(name: String, type: TypeId, length: Int, ptr: UnsafeRawPointer) throws {
+    internal func setAttributeRaw(name: String, type: TypeId, length: Int, ptr: UnsafeRawPointer) throws {
         try varid.put_att(name: name, type: type, length: length, ptr: ptr)
     }
 }
@@ -58,16 +59,14 @@ public struct Attribute<Parent: AttributeProvider> {
     public let length: Int
     
     /// Try to initialise from a name. Nil if the attributes does not exist
-    fileprivate init?(fromExistingName name: String, parent: Parent) throws {
-        do {
-            let attinq = try parent.varid.inq_att(name: name)
-            self.parent = parent
-            self.length = attinq.length
-            self.type = attinq.type
-            self.name = name
-        } catch NetCDFError.attributeNotFound {
+    public init?(fromExistingName name: String, parent: Parent) throws {
+        guard let attinq = try parent.varid.inq_att(name: name) else {
             return nil
         }
+        self.parent = parent
+        self.length = attinq.length
+        self.type = attinq.type
+        self.name = name
     }
     
     /// Try to read this attribute as an external type. Nil if types do not match.
@@ -87,19 +86,19 @@ public struct Attribute<Parent: AttributeProvider> {
     }
     
     /// Read the raw into a prepared pointer
-    public func readRaw(into buffer: UnsafeMutableRawPointer) throws {
+    internal func readRaw(into buffer: UnsafeMutableRawPointer) throws {
         try parent.varid.get_att(name: name, buffer: buffer)
     }
     
-    public func to<T: NetcdfConvertible>(type _: T.Type) -> AttributeGeneric<T>? {
+    /*public func to<T: NetcdfConvertible>(type _: T.Type) -> AttributeGeneric<T>? {
         guard T.canRead(type: type) else {
             return nil
         }
         return AttributeGeneric()
-    }
+    }*/
 }
 
 /// is this layer usefull?
-public struct AttributeGeneric<T: NetcdfConvertible> {
+/*public struct AttributeGeneric<T: NetcdfConvertible> {
     
-}
+}*/

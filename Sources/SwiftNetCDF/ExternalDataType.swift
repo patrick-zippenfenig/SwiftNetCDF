@@ -59,8 +59,8 @@ public protocol NetcdfConvertible {
 
 extension NetcdfConvertible {
     /// Wheter or not this type can be read
-    static func canRead(type: TypeId) -> Bool {
-        guard let externalType = ExternalDataType(rawValue: type.typeid) else {
+    @inlinable public static func canRead(type: TypeId) -> Bool {
+        guard let externalType = type.asExternalDataType() else {
             return false
         }
         return canRead(type: externalType)

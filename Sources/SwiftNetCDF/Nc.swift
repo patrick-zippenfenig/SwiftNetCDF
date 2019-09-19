@@ -69,6 +69,11 @@ public struct TypeId: Equatable {
     fileprivate init(_ typeid: Int32) {
         self.typeid = typeid
     }
+    
+    /// Return an enum of external dataypes if this typeId is a external datatype
+    public func asExternalDataType() -> ExternalDataType? {
+        return ExternalDataType(rawValue: typeid)
+    }
 }
 
 /**
@@ -103,14 +108,18 @@ public struct VarId {
         }
     }
     
-    /// Get the type and length of an attribute. Throws on internal netcdf stuff.
-    public func inq_att(name: String) throws -> (type: TypeId, length: Int) {
-        var typeid: Int32 = 0
-        var len: Int = 0
-        try Nc.exec {
-            nc_inq_att(ncid.ncid, varid, name, &typeid, &len)
+    /// Get the type and length of an attribute. Throws on internal netcdf stuff. Nil if the attibutes does not exist
+    public func inq_att(name: String) throws -> (type: TypeId, length: Int)? {
+        do {
+            var typeid: Int32 = 0
+            var len: Int = 0
+            try Nc.exec {
+                nc_inq_att(ncid.ncid, varid, name, &typeid, &len)
+            }
+            return (TypeId(typeid), len)
+        } catch NetCDFError.attributeNotFound {
+            return nil
         }
-        return (TypeId(typeid), len)
     }
     
     /// Get all variable IDs of a group id

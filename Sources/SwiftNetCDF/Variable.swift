@@ -121,7 +121,8 @@ public struct Variable {
     
     
     /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
-    public func asType<T: NetcdfConvertible>(_ of: T.Type) -> VariableGeneric<T>? {
+    /// This function is inlinable to allow type specialisation across modules at compile time
+    @inlinable public func asType<T: NetcdfConvertible>(_ of: T.Type) -> VariableGeneric<T>? {
         guard T.canRead(type: type) else {
             return nil
         }
@@ -192,6 +193,10 @@ extension Variable: AttributeProvider {
 public struct VariableGeneric<T: NetcdfConvertible> {
     /// The non generic underlaying variable
     public let variable: Variable
+    
+    public init(variable: Variable) {
+        self.variable = variable
+    }
     
     /// Read by offset and count vector
     public func read(offset: [Int], count: [Int]) throws -> [T] {
