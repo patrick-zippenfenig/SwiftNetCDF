@@ -43,16 +43,20 @@ public final class NetCDF {
         - allowUpdate: If true, opens the dataset with read-write access. ("Writing" means any kind of change to the dataset, including appending or changing data, adding or renaming dimensions, variables, and attributes, or deleting attributes.)
      
      - Throws:
-        - `NetCDFError.noPermissions` Attempting to create a netCDF file in a directory where you do not have permission to open files.
+        - `NetCDFError.noPermissions` Attempting to open a netCDF file in a directory where you do not have permission to open files.
         - `NetCDFError.tooManyOpenFiles` Too many files open
         - `NetCDFError.outOfMemory` Out of memory
         - `NetCDFError.hdf5Error` HDF5 error. (NetCDF-4 files only.)
         - `NetCDFError.netCDF4MetedataError` Error in netCDF-4 dimension metadata. (NetCDF-4 files only.)
      
-     - Returns: Root group of a NetCDF file
+     - Returns: Root group of a NetCDF file or nil if the file does not exist
      */
-    public static func open(path: String, allowUpdate: Bool) throws -> Group {
-        let ncid = try Nc.open(path: path, allowUpdate: allowUpdate)
-        return Group(ncid: ncid, parent: nil)
+    public static func open(path: String, allowUpdate: Bool) throws -> Group? {
+        do {
+            let ncid = try Nc.open(path: path, allowUpdate: allowUpdate)
+            return Group(ncid: ncid, parent: nil)
+        } catch (NetCDFError.noSuchFileOrDirectory) {
+            return nil
+        }
     }
 }

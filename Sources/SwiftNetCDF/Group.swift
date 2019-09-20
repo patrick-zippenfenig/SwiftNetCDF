@@ -184,7 +184,7 @@ public final class Group {
     }
 }
 
-extension Group: AttributeProvider {
+extension Group: AttributeProvidable {
     public var varid: VarId {
         return ncid.NC_GLOBAL()
     }

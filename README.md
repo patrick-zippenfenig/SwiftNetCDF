@@ -49,7 +49,9 @@ try variable.write(data)
 ```swift
 import SwiftNetCDF
 
-let file = try NetCDF.open(path: "test.nc", allowUpdate: false)
+guard let file = try NetCDF.open(path: "test.nc", allowUpdate: false) else {
+    fatalError("File test.nc does not exist")
+}
 
 guard let title: String = try file.getAttribute("TITLE")?.read() else {
     fatalError("TITLE attribute not available or not a String")
@@ -108,7 +110,9 @@ XCTAssertEqual(data.dimensionsFlat, [10, 200])
 ```swift
 import SwiftNetCDF
 
-let file = try NetCDF.open(path: "test.nc", allowUpdate: false)
+guard let file = try NetCDF.open(path: "test.nc", allowUpdate: false) else {
+    fatalError("File test.nc does not exist")
+}
 
 /// Recursively print all groups
 func printGroup(_ group: Group) {
@@ -153,11 +157,11 @@ Variable dimension: LAT 10 false
 Variable dimension: LON 200 true
 ```
 
-
 ## Features
 - Abstract Swift data types to NetCDF external types
 - Supported data types: `Float`, `Double`, `String`, `Int8`, `Int16`, `Int32`, `Int64`, `Int`, `UInt16`, `UInt32`, `UInt64` and `UInt`
-- Throws NetCDF library errors as exceptions
+- Returns `nil` for missing files, variables, attributes or data-type mismatch
+- Exceptions are thrown for NetCDF library errors
 - Thread safe. Access to the netCDF C API is serialised with thread locks
 
 ## Limitations

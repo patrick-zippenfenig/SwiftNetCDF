@@ -23,7 +23,9 @@ final class SwiftNetCDFTests: XCTestCase {
         
         
         // Open the same file again and read the data
-        let file2 = try NetCDF.open(path: "test.nc", allowUpdate: false)
+        guard let file2 = try NetCDF.open(path: "test.nc", allowUpdate: false) else {
+            fatalError("File test.nc does not exist")
+        }
         guard let title: String = try file2.getAttribute("TITLE")?.read() else {
             fatalError("TITLE attribute not available or not a String")
         }
@@ -107,6 +109,8 @@ final class SwiftNetCDFTests: XCTestCase {
      Test groups with subgroups
      */
     func testGroups() throws {
+        XCTAssertNil(try NetCDF.open(path: "does-not-exist.nc", allowUpdate: false))
+        
         let file = try NetCDF.create(path: "test.nc", overwriteExisting: true, useNetCDF4: true)
         let group1 = try file.createGroup(name: "GROUP1")
         XCTAssertNotNil(file.getGroup(name: "GROUP1"))
