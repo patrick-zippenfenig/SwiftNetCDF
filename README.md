@@ -1,7 +1,7 @@
 # SwiftNetCDF
 ![Swift 5](https://img.shields.io/badge/Swift-5-orange.svg) ![SPM](https://img.shields.io/badge/SPM-compatible-green.svg) ![Platforms](https://img.shields.io/badge/Platforms-macOS%20Linux-green.svg) [![codebeat badge](https://codebeat.co/badges/cca7b706-6c03-4b0a-ad0b-f730563e0ef5)](https://codebeat.co/projects/github-com-patrick-zippenfenig-swiftnetcdf-master) [![CircleCI](https://circleci.com/gh/patrick-zippenfenig/SwiftNetCDF/tree/master.svg?style=svg)](https://circleci.com/gh/patrick-zippenfenig/SwiftNetCDF/tree/master) 
 
-SwiftNetCDF is a library to read and write NetCDF files.
+SwiftNetCDF is a library to read and write NetCDF files in Swift with type safety.
 
 ## Installation
 1. SwiftNetCDF requires the NetCDF C client library which can be installed on Mac with `brew install netcdf` or on Linux with `sudo apt install libnetcdf-dev`.
@@ -162,10 +162,84 @@ Variable dimension: LON 200 true
 - Supported data types: `Float`, `Double`, `String`, `Int8`, `Int16`, `Int32`, `Int64`, `Int`, `UInt16`, `UInt32`, `UInt64` and `UInt`
 - Returns `nil` for missing files, variables, attributes or data-type mismatch
 - Exceptions are thrown for NetCDF library errors
+- Uses generics to ensure the correct type is being used
 - Thread safe. Access to the netCDF C API is serialised with thread locks
 
 ## Limitations
 - User defined data tyes not yet implemented
+
+## Quick function reference
+SwiftNetCDF uses a simple data structures to organise access to NetCDF functions. The most important once are listed below. 
+
+```swift
+struct NetCDF {
+    static func create(path: String, overwriteExisting: Bool) -> Group
+    static func open(path: String, allowUpdate: Bool) -> Group?
+}
+
+struct Group {
+    let name: String
+    
+    func getGroup(name: String) -> Group?
+    func getGroups() -> [Group]
+    func createGroup(name: String) -> Group
+    
+    func getDimensions() -> [Dimension]
+    func createDimension(name: String, length: Int, isUnlimited: Bool = false) -> Dimension
+    
+    func getVariable(name: String) -> Variable?
+    func getVariables() -> [Variable]
+    func createVariable<T>(name: String, type: T.Type, dimensions: [Dimension]) -> VariableGeneric<T>
+
+    func getAttribute(_ key: String) -> Attribute?
+    func getAttributes() -> [Attribute]
+    func setAttribute<T>(_ name: String, _ value: T)
+    func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: [T])
+}
+
+struct Variable {
+    let name: String
+    
+    var dimensions: [Dimension]
+    var dimensionsFlat: [Int]
+    
+    /// `Nil` in case of type mismatch
+    func asType<T>(_ of: T.Type) -> VariableGeneric<T>?
+    
+    func defineDeflate(enable: Bool, level: Int = 6, shuffle: Bool = false)
+    func defineChunking(chunking: VarId.Chunking, chunks: [Int])
+    
+    // Same get/set attribute functions as a Group
+}
+
+struct VariableGeneric<T> {
+    func read() -> [T]
+    func read(offset: [Int], count: [Int]) -> [T]
+    func read(offset: [Int], count: [Int], stride: [Int]) -> [T]
+    
+    func write(_ data: [T])
+    func write(_ data: [T], offset: [Int], count: [Int])
+    func write(_ data: [T], offset: [Int], count: [Int], stride: [Int])
+    
+    // Same get/set attribute functions as a Group
+    // Same define functions as Variable
+}
+
+struct Dimension {
+    let name: String
+    let length: Int
+    let isUnlimited: Bool
+}
+
+struct Attribute {
+    let name: String
+    let length: Int
+    
+    func read<T: NetcdfConvertible>() throws -> T?
+    func read<T: NetcdfConvertible>() throws -> [T]?
+}
+```
+
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
