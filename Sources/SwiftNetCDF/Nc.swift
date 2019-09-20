@@ -204,12 +204,12 @@ public struct VarId {
         }
     }
     
-    /// Set filter options
-    public func def_var_filter(id: UInt32, params: [UInt32]) throws {
+    /// Set filter options -> Not available in older NetCDF versions
+    /*public func def_var_filter(id: UInt32, params: [UInt32]) throws {
         try Nc.exec {
             nc_def_var_filter(ncid.ncid, varid, id, params.count, params)
         }
-    }
+    }*/
 }
 
 

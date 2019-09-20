@@ -92,8 +92,9 @@ public extension VariableDefinable {
     
     /**
      Define a new variable filter.
+     This is not available in older NetCDF versions
      */
-    func defineFilter(id: UInt32, params: [UInt32]) throws {
+    /*func defineFilter(id: UInt32, params: [UInt32]) throws {
         try varid.def_var_filter(id: id, params: params)
-    }
+    }*/
 }
