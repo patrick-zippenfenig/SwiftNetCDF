@@ -11,6 +11,9 @@ SwiftNetCDF is a library to read and write NetCDF files.
 ```swift
   dependencies: [
     .package(url: "https://github.com/patrick-zippenfenig/SwiftNetCDF.git", from: "0.0.0")
+  ],
+  targets: [
+    .target(name: "MyApp", dependencies: ["SwiftNetCDF"])
   ]
 ```
 
@@ -46,7 +49,7 @@ try variable.write(data)
 ```swift
 import SwiftNetCDF
 
-let file = try NetCDF.open(path: "test.nc", allowWrite: false)
+let file = try NetCDF.open(path: "test.nc", allowUpdate: false)
 
 guard let title: String = try file.getAttribute("TITLE")?.read() else {
     fatalError("TITLE attribute not available or not a String")
@@ -105,7 +108,7 @@ XCTAssertEqual(data.dimensionsFlat, [10, 200])
 ```swift
 import SwiftNetCDF
 
-let file = try NetCDF.open(path: "test.nc", allowWrite: false)
+let file = try NetCDF.open(path: "test.nc", allowUpdate: false)
 
 /// Recursively print all groups
 func printGroup(_ group: Group) {

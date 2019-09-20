@@ -23,7 +23,7 @@ final class SwiftNetCDFTests: XCTestCase {
         
         
         // Open the same file again and read the data
-        let file2 = try NetCDF.open(path: "test.nc", allowWrite: false)
+        let file2 = try NetCDF.open(path: "test.nc", allowUpdate: false)
         guard let title: String = try file2.getAttribute("TITLE")?.read() else {
             fatalError("TITLE attribute not available or not a String")
         }

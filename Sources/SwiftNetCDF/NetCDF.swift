@@ -40,7 +40,7 @@ public final class NetCDF {
      
      - Parameters:
         - path: File name for netCDF dataset to be opened. When the dataset is located on some remote server, then the path may be an OPeNDAP URL rather than a file path. If a the path is a DAP URL, then the open mode is read-only. Setting NC_WRITE will be ignored.
-        - allowWrite: If true, opens the dataset with read-write access. ("Writing" means any kind of change to the dataset, including appending or changing data, adding or renaming dimensions, variables, and attributes, or deleting attributes.)
+        - allowUpdate: If true, opens the dataset with read-write access. ("Writing" means any kind of change to the dataset, including appending or changing data, adding or renaming dimensions, variables, and attributes, or deleting attributes.)
      
      - Throws:
         - `NetCDFError.noPermissions` Attempting to create a netCDF file in a directory where you do not have permission to open files.
@@ -51,8 +51,8 @@ public final class NetCDF {
      
      - Returns: Root group of a NetCDF file
      */
-    public static func open(path: String, allowWrite: Bool) throws -> Group {
-        let ncid = try Nc.open(path: path, allowWrite: allowWrite)
+    public static func open(path: String, allowUpdate: Bool) throws -> Group {
+        let ncid = try Nc.open(path: path, allowUpdate: allowUpdate)
         return Group(ncid: ncid, parent: nil)
     }
 }

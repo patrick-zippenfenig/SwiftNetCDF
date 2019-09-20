@@ -599,8 +599,8 @@ public extension Nc {
     }
     
     /// Open an exsiting NetCDF file
-    static func open(path: String, allowWrite: Bool) throws -> NcId {
-        return try open(path: path, omode: allowWrite ? NC_WRITE : 0)
+    static func open(path: String, allowUpdate: Bool) throws -> NcId {
+        return try open(path: path, omode: allowUpdate ? NC_WRITE : 0)
     }
     
     /// Create a new NetCDF file
