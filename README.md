@@ -10,7 +10,7 @@ SwiftNetCDF is a library to read and write NetCDF files in Swift with type safet
 
 ```swift
   dependencies: [
-    .package(url: "https://github.com/patrick-zippenfenig/SwiftNetCDF.git", from: "0.0.0")
+    .package(url: "https://github.com/patrick-zippenfenig/SwiftNetCDF.git", from: "1.0.0")
   ],
   targets: [
     .target(name: "MyApp", dependencies: ["SwiftNetCDF"])
