@@ -33,6 +33,7 @@ public enum NetCDFError: Error {
     case hdf5Error
     case netCDF4MetedataError
     case alreadyExists
+    case datatypeNotCompatible
     
     /// Init from NetCDF error code
     /// TODO find NetCDF definiton for code 2 "no such file"

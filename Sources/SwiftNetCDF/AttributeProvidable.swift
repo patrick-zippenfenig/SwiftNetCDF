@@ -37,11 +37,14 @@ extension AttributeProvidable {
         try setAttribute(name, [value])
     }
     
-    /// Define a new attribute by name. The value must be a supported external type.
-    public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: [T]) throws {
-        let type = T.netcdfType.typeId
+    /// Define a new attribute by name. The value must be a supported external type. The type parameter can be set to enfore
+    public func setAttribute<T: NetcdfConvertible>(_ name: String, _ value: [T], type: ExternalDataType = T.netcdfType) throws {
+        guard T.canRead(type: type) else {
+            throw NetCDFError.datatypeNotCompatible
+        }
+        
         try T.withPointer(to: value) { ptr in
-            try setAttributeRaw(name: name, type: type, length: value.count, ptr: ptr)
+            try setAttributeRaw(name: name, type: type.typeId, length: value.count, ptr: ptr)
         }
     }
     

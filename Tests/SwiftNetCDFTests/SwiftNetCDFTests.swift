@@ -12,6 +12,9 @@ final class SwiftNetCDFTests: XCTestCase {
         let file = try NetCDF.create(path: "test.nc", overwriteExisting: true)
         try file.setAttribute("TITLE", "My data set")
         
+        // Write attribute as [Char] instead of string with 0 terminator
+        try file.setAttribute("TITLE_CHAR", Array("My data set".utf8CString), type: .char)
+        
         let dimensions = [
             try file.createDimension(name: "LAT", length: 10),
             try file.createDimension(name: "LON", length: 5)
