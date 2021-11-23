@@ -1,5 +1,5 @@
 # SwiftNetCDF
-![Swift 5](https://img.shields.io/badge/Swift-5-orange.svg) ![SPM](https://img.shields.io/badge/SPM-compatible-green.svg) ![Platforms](https://img.shields.io/badge/Platforms-macOS%20Linux-green.svg) [![codebeat badge](https://codebeat.co/badges/cca7b706-6c03-4b0a-ad0b-f730563e0ef5)](https://codebeat.co/projects/github-com-patrick-zippenfenig-swiftnetcdf-master) [![CircleCI](https://circleci.com/gh/patrick-zippenfenig/SwiftNetCDF/tree/master.svg?style=svg)](https://circleci.com/gh/patrick-zippenfenig/SwiftNetCDF/tree/master) 
+![Swift 5](https://img.shields.io/badge/Swift-5-orange.svg) ![SPM](https://img.shields.io/badge/SPM-compatible-green.svg) ![Platforms](https://img.shields.io/badge/Platforms-macOS%20Linux-green.svg) [![codebeat badge](https://codebeat.co/badges/cca7b706-6c03-4b0a-ad0b-f730563e0ef5)](https://codebeat.co/projects/github-com-patrick-zippenfenig-swiftnetcdf-master) [![Test](https://github.com/patrick-zippenfenig/SwiftNetCDF/actions/workflows/test.yml/badge.svg)](https://github.com/patrick-zippenfenig/SwiftNetCDF/actions/workflows/test.yml)
 
 SwiftNetCDF is a library to read and write NetCDF files in Swift with type safety.
 
