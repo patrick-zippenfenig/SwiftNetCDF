@@ -359,7 +359,7 @@ public struct NcId {
         try! Nc.exec {
             nc_inq_grpname_len(ncid, &nameLength)
         }
-        var nameBuffer = [Int8](repeating: 0, count: nameLength) // CHECK +1 needed?
+        var nameBuffer = [Int8](repeating: 0, count: nameLength + 1)
         try! Nc.exec {
             nc_inq_grpname(ncid, &nameBuffer)
         }
