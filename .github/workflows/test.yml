@@ -1,3 +1,5 @@
+# https://github.com/peripheryapp/periphery/blob/master/.github/workflows/test.yml
+
 name: Test
 on:
   push:
@@ -50,6 +52,8 @@ jobs:
     - name: Resolve dependencies
       if: steps.cache-resolved-dependencies.outputs.cache-hit != 'true'
       run: ${{ env.swift_package_resolve }}
+    - name: Install netcdf
+      run: brew install netcdf
     - name: Build
       run: ${{ env.swift_build }}
     - name: Test
@@ -92,6 +96,8 @@ jobs:
         key: ${{ matrix.cache-version }}-${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-${{ hashFiles('Package.swift', 'Package.resolved') }}
         restore-keys: |
           ${{ matrix.cache-version }}-${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-
+    - name: Install netcdf
+      run: apt-get update && apt-get -qq -y install libnetcdf-dev
     - name: Resolve dependencies
       if: steps.cache-resolved-dependencies.outputs.cache-hit != 'true'
       run: ${{ env.swift_package_resolve }}
