@@ -72,10 +72,10 @@ jobs:
             cache-version: 2
           - swift: "5.4"
             container: "swift:5.4"
-            cache-version: 2
+            cache-version: 4
           - swift: "5.3"
             container: "swift:5.3"
-            cache-version: 2
+            cache-version: 4
     runs-on: ubuntu-20.04
     container: ${{ matrix.container }}
     name: Linux
