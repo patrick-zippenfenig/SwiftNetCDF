@@ -555,8 +555,8 @@ public extension Nc {
     }
     
     /// Open an existing NetCDF file from memory
-    static func open(path: String, memory: UnsafeRawBufferPointer) throws -> NcId {
-        return try open(path: path, memory: memory, omode: 0)
+    static func open(memory: UnsafeRawBufferPointer, datasetName: String) throws -> NcId {
+        return try open(path: datasetName, memory: memory, omode: 0)
     }
     
     /// Open an existing NetCDF file

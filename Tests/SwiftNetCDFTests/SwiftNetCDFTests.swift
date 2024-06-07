@@ -46,8 +46,8 @@ final class SwiftNetCDFTests: XCTestCase {
         
         // Test in memory access
         var memory = try Data(contentsOf: URL(filePath: "test.nc"))
-        try memory.withUnsafeMutableBytes({ memory in
-            guard let file2 = try NetCDF.open(path: "test.nc", memory: memory, allowUpdate: false) else {
+        try memory.withUnsafeBytes({ memory in
+            guard let file2 = try NetCDF.open(memory: memory) else {
                 fatalError("File test.nc does not exist")
             }
             guard let title: String = try file2.getAttribute("TITLE")?.read() else {

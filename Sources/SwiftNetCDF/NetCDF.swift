@@ -66,8 +66,8 @@ public final class NetCDF {
      This function opens an existing netCDF dataset for access. It determines the underlying file format automatically. Use the same call to open a netCDF classic or netCDF-4 file.
      
      - Parameters:
-        - path: Only used to set the dataset name.
         - memory: A memory buffer with NetCDF data. Please ensure that the memory adress remaind valid while using the NetCDF handle.
+        - datasetName: Can be set to specifiy the name of the dataset
      
      - Throws:
         - `NetCDFError.noPermissions` Attempting to open a netCDF file in a directory where you do not have permission to open files.
@@ -78,9 +78,9 @@ public final class NetCDF {
      
      - Returns: Root group of a NetCDF file or nil if memory cannot be opened as a netcdf handle
      */
-    public static func open(path: String, memory: UnsafeRawBufferPointer) throws -> Group? {
+    public static func open(memory: UnsafeRawBufferPointer, datasetName: String = "dataset") throws -> Group? {
         do {
-            let ncid = try Nc.open(path: path, memory: memory)
+            let ncid = try Nc.open(memory: memory, datasetName: datasetName)
             return Group(ncid: ncid, parent: nil)
         } catch (NetCDFError.noSuchFileOrDirectory) {
             return nil

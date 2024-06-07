@@ -176,8 +176,8 @@ struct NetCDF {
     static func create(path: String, overwriteExisting: Bool) -> Group
     static func open(path: String, allowUpdate: Bool) -> Group?
     
-    /// Open NetCDF file from memory in read-only mode. Path is only used to set the dataset name.
-    static func open(path: String, memory: UnsafeRawBufferPointer)) -> Group?
+    /// Opens a NetCDF file from memory in read-only mode
+    static func open(memory: UnsafeRawBufferPointer)) -> Group?
 }
 
 struct Group {
