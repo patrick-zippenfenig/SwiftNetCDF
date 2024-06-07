@@ -175,6 +175,9 @@ SwiftNetCDF uses a simple data structures to organise access to NetCDF functions
 struct NetCDF {
     static func create(path: String, overwriteExisting: Bool) -> Group
     static func open(path: String, allowUpdate: Bool) -> Group?
+    
+    /// Open NetCDF file from memory in read-only mode. Path is only used to set the dataset name.
+    static func open(path: String, memory: UnsafeRawBufferPointer)) -> Group?
 }
 
 struct Group {

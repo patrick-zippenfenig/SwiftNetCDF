@@ -536,7 +536,7 @@ public extension Nc {
         }
     }
     
-    /// Open an exsiting NetCDF file
+    /// Open an existing NetCDF file
     static func open(path: String, omode: Int32) throws -> NcId {
         var ncid: Int32 = 0
         try exec {
@@ -545,7 +545,21 @@ public extension Nc {
         return NcId(ncid)
     }
     
-    /// Open an exsiting NetCDF file
+    /// Open an existing NetCDF file from memory
+    static func open(path: String, memory: UnsafeRawBufferPointer, omode: Int32) throws -> NcId {
+        var ncid: Int32 = 0
+        try exec {
+            nc_open_mem(path, omode, memory.count, UnsafeMutableRawPointer(mutating: memory.baseAddress), &ncid)
+        }
+        return NcId(ncid)
+    }
+    
+    /// Open an existing NetCDF file from memory
+    static func open(path: String, memory: UnsafeRawBufferPointer) throws -> NcId {
+        return try open(path: path, memory: memory, omode: 0)
+    }
+    
+    /// Open an existing NetCDF file
     static func open(path: String, allowUpdate: Bool) throws -> NcId {
         return try open(path: path, omode: allowUpdate ? NC_WRITE : 0)
     }
