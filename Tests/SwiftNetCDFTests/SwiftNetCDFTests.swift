@@ -45,7 +45,7 @@ final class SwiftNetCDFTests: XCTestCase {
         XCTAssertEqual([6, 7, 11, 12], data2)
         
         // Test in memory access
-        var memory = try Data(contentsOf: URL(fileURLWithPath: "test.nc"))
+        let memory = try Data(contentsOf: URL(fileURLWithPath: "test.nc"))
         try memory.withUnsafeBytes({ memory in
             guard let file2 = try NetCDF.open(memory: memory) else {
                 fatalError("File test.nc does not exist")
