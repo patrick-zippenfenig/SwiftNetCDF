@@ -43,6 +43,18 @@ final class SwiftNetCDFTests: XCTestCase {
         let data2 = try typedVariable.read(offset: [1,1], count: [2,2])
         
         XCTAssertEqual([6, 7, 11, 12], data2)
+        
+        // Test in memory access
+        let memory = try Data(contentsOf: URL(fileURLWithPath: "test.nc"))
+        try memory.withUnsafeBytes({ memory in
+            guard let file2 = try NetCDF.open(memory: memory) else {
+                fatalError("File test.nc does not exist")
+            }
+            guard let title: String = try file2.getAttribute("TITLE")?.read() else {
+                fatalError("TITLE attribute not available or not a String")
+            }
+            XCTAssertEqual(title, "My data set")
+        })
     }
     
     func testCreateGroups() throws {
