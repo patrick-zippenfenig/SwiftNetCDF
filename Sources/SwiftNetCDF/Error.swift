@@ -8,7 +8,6 @@
 import Foundation
 
 import CNetCDF
-import Foundation
 
 /// All errors this library could throw
 public enum NetCDFError: Error {
@@ -31,18 +30,20 @@ public enum NetCDFError: Error {
     case tooManyOpenFiles
     case outOfMemory
     case hdf5Error
+    // TODO: fix typo `netCDF4MetedataError` -> `netCDF4MetadataError`
     case netCDF4MetedataError
     case alreadyExists
     case datatypeNotCompatible
-    
+
     /// Init from NetCDF error code
-    /// TODO find NetCDF definiton for code 2 "no such file"
+    /// TODO find NetCDF definition for code 2 "no such file"
     init(ncerr: Int32) {
         switch ncerr {
         case 2: self = .noSuchFileOrDirectory
         case NC_ENOTVAR: self = .invalidVariable
         case NC_EBADID: self = .badNcid
-        case NC_ENOTVAR: self = .badVarid
+        // TODO: this case was unreachable
+        // case NC_ENOTVAR: self = .badVarid
         case NC_EBADGRPID: self = .badGroupid
         case NC_EBADNAME: self = .badName
         case NC_ENOTATT: self = .attributeNotFound
@@ -61,9 +62,7 @@ public enum NetCDFError: Error {
     }
 }
 
-/**
- Get a the error message for a code as a Swift String
- */
+/// Get a the error message for a code as a Swift String
 fileprivate func nc_stringError(_ ncerr: Int32) -> String {
     return String(cString: nc_strerror(ncerr))
 }

@@ -14,10 +14,8 @@ public struct Variable {
     public let varid: VarId
     public var dimensions: [Dimension]
     public let type: TypeId
-    
-    /**
-     Initialise from an existing variable id
-     */
+
+    /// Initialize from an existing variable id
     init(fromVarId varid: VarId, group: Group) {
         let varinq = varid.inq_var()
         // Unlimited dimensions are not available in NetCDF v3
@@ -30,10 +28,8 @@ public struct Variable {
         }
         self.type = varinq.type
     }
-    
-    /**
-     Define a new variable in the NetCDF file
-     */
+
+    /// Define a new variable in the NetCDF file
     init(name: String, type: TypeId, dimensions: [Dimension], group: Group) throws {
         let dimensionIds = dimensions.map { $0.dimid }
         let varid = try group.ncid.def_var(name: name, type: type, dimensionIds: dimensionIds)
@@ -43,18 +39,16 @@ public struct Variable {
         self.dimensions = dimensions
         self.type = type
     }
-    
-    
-    
-    /// Try to cast this netcdf variable to a specfic primitive type for read and write operations
-    /// This function is inlinable to allow type specialisation across modules at compile time
+
+    /// Try to cast this netcdf variable to a specific primitive type for read and write operations
+    /// This function is inlinable to allow type specialization across modules at compile time
     @inlinable public func asType<T: NetcdfConvertible>(_ of: T.Type) -> VariableGeneric<T>? {
         guard T.canRead(type: type) else {
             return nil
         }
         return VariableGeneric(variable: self)
     }
-    
+
     /// Unsafe because the data length is not validated.
     func readUnsafe(into: UnsafeMutableRawPointer, offset: [Int], count: [Int]) throws {
         guard dimensions.count == offset.count else {
@@ -65,7 +59,7 @@ public struct Variable {
         }
         try varid.get_vara(offset: offset, count: count, buffer: into)
     }
-    
+
     /// Unsafe because the data length is not validated.
     func readUnsafe(into: UnsafeMutableRawPointer, offset: [Int], count: [Int], stride: [Int]) throws {
         guard dimensions.count == offset.count else {
@@ -79,7 +73,7 @@ public struct Variable {
         }
         try varid.get_vars(offset: offset, count: count, stride: stride, buffer: into)
     }
-    
+
     /// Unsafe because the data length is not validated.
     mutating func writeUnsafe(from: UnsafeRawPointer, offset: [Int], count: [Int]) throws {
         guard dimensions.count == offset.count else {
@@ -93,7 +87,7 @@ public struct Variable {
             dimensions[i].update(group: group)
         }
     }
-    
+
     /// Unsafe because the data length is not validated.
     mutating func writeUnsafe(from: UnsafeRawPointer, offset: [Int], count: [Int], stride: [Int]) throws {
         guard dimensions.count == offset.count else {
@@ -119,18 +113,17 @@ extension Variable: AttributeProvidable {
     }
 }
 
-extension Variable: VariableDefinable { }
-
+extension Variable: VariableDefinable {}
 
 /// A generic netcdf variable of a fixed data type
 public struct VariableGeneric<T: NetcdfConvertible> {
-    /// The non generic underlaying variable
+    /// The non generic underlying variable
     public var variable: Variable
-    
+
     public init(variable: Variable) {
         self.variable = variable
     }
-    
+
     /// Read by offset and count vector
     public func read(offset: [Int], count: [Int]) throws -> [T] {
         let n_elements = count.reduce(1, *)
@@ -138,7 +131,7 @@ public struct VariableGeneric<T: NetcdfConvertible> {
             try variable.readUnsafe(into: ptr, offset: offset, count: count)
         }
     }
-    
+
     /// Read by offset, count and stride vector
     public func read(offset: [Int], count: [Int], stride: [Int]) throws -> [T] {
         let n_elements = count.reduce(1, *)
@@ -146,31 +139,31 @@ public struct VariableGeneric<T: NetcdfConvertible> {
             try variable.readUnsafe(into: ptr, offset: offset, count: count, stride: stride)
         }
     }
-    
+
     /// Read the whole variable
     public func read() throws -> [T] {
         let offset = [Int](repeating: 0, count: variable.dimensions.count)
         let count = variable.dimensions.map { $0.length }
         return try read(offset: offset, count: count)
     }
-    
+
     /// Write a complete array to the file. The array must be as large as the defined dimensions
     public mutating func write(_ data: [T]) throws {
         guard variable.count == data.count else {
             throw NetCDFError.numberOfElementsInvalid
         }
-        let offest = [Int](repeating: 0, count: variable.dimensions.count)
+        let offset = [Int](repeating: 0, count: variable.dimensions.count)
         let dimensions = variable.dimensions.map { $0.length }
-        try write(data, offset: offest, count: dimensions)
+        try write(data, offset: offset, count: dimensions)
     }
-    
+
     /// Write only a defined subset specified by offset and count
     public mutating func write(_ data: [T], offset: [Int], count: [Int]) throws {
         try T.withPointer(to: data) { ptr in
             try variable.writeUnsafe(from: ptr, offset: offset, count: count)
         }
     }
-    
+
     /// Write only a defined subset specified by offset, count and stride
     public mutating func write(_ data: [T], offset: [Int], count: [Int], stride: [Int]) throws {
         try T.withPointer(to: data) { ptr in
@@ -184,21 +177,19 @@ extension VariableGeneric: AttributeProvidable {
     public var varid: VarId {
         return variable.varid
     }
-    
+
     public var group: Group {
         return variable.group
     }
-    
+
     public var numberOfAttributes: Int32 {
         return variable.numberOfAttributes
     }
 }
 
-/// Enable varibale define functions like compression
+/// Enable variable define functions like compression
 extension VariableGeneric: VariableDefinable {
     public var dimensions: [Dimension] {
         return variable.dimensions
     }
 }
-
-

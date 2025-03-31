@@ -7,9 +7,7 @@
 
 import Foundation
 
-/**
- These datatypes are available as external and are mapped to Swift datatypes with the protocol `NetcdfConvertible`.
- */
+/// These datatypes are available as external and are mapped to Swift datatypes with the protocol `NetcdfConvertible`.
 public enum ExternalDataType: Int32 {
     /// NC_BYTE Int8 8-bit signed integer
     case byte = 1
@@ -37,28 +35,25 @@ public enum ExternalDataType: Int32 {
     case string = 12
 }
 
-
 /// Conforming allows read and write operations for netcdf read/write
 public protocol NetcdfConvertible {
-    /// This function should prepare a buffer, pass it to a clouse which reads binary data and then return an array of that type
-    static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [Self]
-    
-    /// Serialise array of values
-    static func withPointer(to: [Self], fn: (UnsafeRawPointer) throws -> ()) throws
-    
+    /// This function should prepare a buffer, pass it to a closure which reads binary data and then return an array of that type
+    static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> Void) throws -> [Self]
+
+    /// Serialize array of values
+    static func withPointer(to: [Self], fn: (UnsafeRawPointer) throws -> Void) throws
+
     /// The type a Swift variable should represent in a NetCDF file.
     static var netcdfType: ExternalDataType { get }
-    
-    /**
-     Some NetCDF dataypes are not exclusively mapped to a single Swift type. E.g. NC_CHAR and NC_BYTE can both be read by Swift Int8.
-     Also legacy applications with NetCDF version 3 did not have unsigned data types and may store unsigned data in signed data.
-     Reading a NC_INT64 into Swift UInt is therefore also allowed
-     */
+
+    /// Some NetCDF datatypes are not exclusively mapped to a single Swift type. E.g. NC_CHAR and NC_BYTE can both be read by Swift Int8.
+    /// Also legacy applications with NetCDF version 3 did not have unsigned data types and may store unsigned data in signed data.
+    /// Reading a NC_INT64 into Swift UInt is therefore also allowed
     static func canRead(type: ExternalDataType) -> Bool
 }
 
 extension NetcdfConvertible {
-    /// Wheter or not this type can be read
+    /// Wether or not this type can be read
     @inlinable public static func canRead(type: TypeId) -> Bool {
         guard let externalType = type.asExternalDataType() else {
             return false
@@ -67,23 +62,22 @@ extension NetcdfConvertible {
     }
 }
 
-/// Numeric NetCDF exernal types. Actually all types except String. A basic conversion with array is possible.
+/// Numeric NetCDF external types. Actually all types except String. A basic conversion with array is possible.
 public protocol NetcdfConvertibleNumeric: NetcdfConvertible {
     static var emptyValue: Self { get }
 }
 
 extension NetcdfConvertibleNumeric {
-    public static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [Self] {
+    public static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> Void) throws -> [Self] {
         var arr = [Self](repeating: emptyValue, count: length)
         try fn(&arr)
         return arr
     }
-    
-    public static func withPointer(to: [Self], fn: (UnsafeRawPointer) throws -> ()) throws {
+
+    public static func withPointer(to: [Self], fn: (UnsafeRawPointer) throws -> Void) throws {
         try fn(to)
     }
 }
-
 
 extension Float: NetcdfConvertibleNumeric {
     public static var emptyValue: Float { return Float.nan }
@@ -170,42 +164,41 @@ extension UInt64: NetcdfConvertibleNumeric {
     }
 }
 
-
 extension String: NetcdfConvertible {
     public static func canRead(type: ExternalDataType) -> Bool {
         return type == .string
     }
-    
+
     public static var netcdfType: ExternalDataType { return .string }
-    
-    public static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> ()) throws -> [String] {
+
+    public static func createFromBuffer(length: Int, fn: (UnsafeMutableRawPointer) throws -> Void) throws -> [String] {
         var pointers = [UnsafeMutablePointer<Int8>?](repeating: nil, count: length)
         try fn(&pointers)
         let strings = pointers.map { String(cString: $0!) }
         Nc.free_string(len: length, stringArray: &pointers)
         return strings
     }
-    
-    public static func withPointer(to: [String], fn: (UnsafeRawPointer) throws -> ()) throws {
+
+    public static func withPointer(to: [String], fn: (UnsafeRawPointer) throws -> Void) throws {
         var pointers = [UnsafeRawPointer]()
         pointers.reserveCapacity(to.count)
-        
+
         // Recursively call withCString until we have all pointer -> stack size may limit string array length
-        func mapRecursive(i: Int, fn: (UnsafeRawPointer) throws -> ()) throws {
+        func mapRecursive(i: Int, fn: (UnsafeRawPointer) throws -> Void) throws {
             if i == to.count {
                 try fn(pointers)
                 return
             }
             try to[i].withCString { ptr in
                 pointers.append(ptr)
-                try mapRecursive(i: i+1, fn: fn)
+                try mapRecursive(i: i + 1, fn: fn)
             }
         }
         try mapRecursive(i: 0, fn: fn)
-        
+
         /// Cast data to a C string and then prepare an array of pointer
-        //let cStrings = to.map { $0.cString(using: .utf8)! }
-        //let pointers = cStrings.map { $0.withUnsafeBytes { $0.baseAddress! } }
-        //try fn(pointers)
+        // let cStrings = to.map { $0.cString(using: .utf8)! }
+        // let pointers = cStrings.map { $0.withUnsafeBytes { $0.baseAddress! } }
+        // try fn(pointers)
     }
 }

@@ -23,7 +23,7 @@ SwiftNetCDF is a library to read and write NetCDF files in Swift with type safet
 $ swift build
 ```
 
-## Usage 
+## Usage
 1. Write NetCDF files
 
 ```swift
@@ -82,8 +82,8 @@ let dimLon = try subGroup.createDimension(name: "LON", length: 5, isUnlimited: t
 var lats = try subGroup.createVariable(name: "LATITUDES", type: Float.self, dimensions: [dimLat])
 var lons = try subGroup.createVariable(name: "LONGITUDES", type: Float.self, dimensions: [dimLon])
 
-try lats.write((0..<10).map(Float.init))
-try lons.write((0..<5).map(Float.init))
+try lats.write((0 ..< 10).map(Float.init))
+try lons.write((0 ..< 5).map(Float.init))
 
 // `data` is of type `VariableGeneric<Float>`. Define functions can be accessed via `data.variable`
 var data = try subGroup.createVariable(name: "DATA", type: Float.self, dimensions: [dimLat, dimLon])
@@ -92,8 +92,8 @@ var data = try subGroup.createVariable(name: "DATA", type: Float.self, dimension
 try data.defineDeflate(enable: true, level: 6, shuffle: true)
 try data.defineChunking(chunking: .chunked, chunks: [1, 5])
 
-/// Because the latitude dimension is unlimted, we can write more than the defined size
-let array = (0..<1000).map(Float.init)
+/// Because the latitude dimension is unlimited, we can write more than the defined size
+let array = (0 ..< 1000).map(Float.init)
 try data.write(array, offset: [0, 0], count: [10, 100])
 
 /// The check the new dimension count
@@ -117,22 +117,22 @@ guard let file = try NetCDF.open(path: "test.nc", allowUpdate: false) else {
 /// Recursively print all groups
 func printGroup(_ group: Group) {
     print("Group: \(group.name)")
-    
+
     for d in group.getDimensions() {
         print("Dimension: \(d.name) \(d.length) \(d.isUnlimited)")
     }
-    
+
     for v in group.getVariables() {
         print("Variable: \(v.name) \(v.type.asExternalDataType()!)")
         for d in v.dimensions {
             print("Variable dimension: \(d.name) \(d.length) \(d.isUnlimited)")
         }
     }
-    
-    for a in try! group.getAttributes() {
+
+    for a in try group.getAttributes() {
         print("Attribute: \(a.name) \(a.length) \(a.type.asExternalDataType()!)")
     }
-    
+
     for subgroup in group.getGroups() {
         printGroup(subgroup)
     }
@@ -163,33 +163,33 @@ Variable dimension: LON 200 true
 - Returns `nil` for missing files, variables, attributes or data-type mismatch
 - Exceptions are thrown for NetCDF library errors
 - Uses generics to ensure the correct type is being used
-- Thread safe. Access to the netCDF C API is serialised with thread locks
+- Thread safe. Access to the netCDF C API is serialized with thread locks
 
 ## Limitations
-- User defined data tyes not yet implemented
+- User defined data types not yet implemented
 
 ## Quick function reference
-SwiftNetCDF uses a simple data structures to organise access to NetCDF functions. The most important once are listed below. 
+SwiftNetCDF uses a simple data structures to organize access to NetCDF functions. The most important once are listed below.
 
 ```swift
 struct NetCDF {
     static func create(path: String, overwriteExisting: Bool) -> Group
     static func open(path: String, allowUpdate: Bool) -> Group?
-    
+
     /// Opens a NetCDF file from memory in read-only mode
     static func open(memory: UnsafeRawBufferPointer)) -> Group?
 }
 
 struct Group {
     let name: String
-    
+
     func getGroup(name: String) -> Group?
     func getGroups() -> [Group]
     func createGroup(name: String) -> Group
-    
+
     func getDimensions() -> [Dimension]
     func createDimension(name: String, length: Int, isUnlimited: Bool = false) -> Dimension
-    
+
     func getVariable(name: String) -> Variable?
     func getVariables() -> [Variable]
     func createVariable<T>(name: String, type: T.Type, dimensions: [Dimension]) -> VariableGeneric<T>
@@ -202,16 +202,16 @@ struct Group {
 
 struct Variable {
     let name: String
-    
+
     var dimensions: [Dimension]
     var dimensionsFlat: [Int]
-    
+
     /// `Nil` in case of type mismatch
     func asType<T>(_ of: T.Type) -> VariableGeneric<T>?
-    
+
     func defineDeflate(enable: Bool, level: Int = 6, shuffle: Bool = false)
     func defineChunking(chunking: VarId.Chunking, chunks: [Int])
-    
+
     // Same get/set attribute functions as a Group
 }
 
@@ -219,11 +219,11 @@ struct VariableGeneric<T> {
     func read() -> [T]
     func read(offset: [Int], count: [Int]) -> [T]
     func read(offset: [Int], count: [Int], stride: [Int]) -> [T]
-    
+
     func write(_ data: [T])
     func write(_ data: [T], offset: [Int], count: [Int])
     func write(_ data: [T], offset: [Int], count: [Int], stride: [Int])
-    
+
     // Same get/set attribute functions as a Group
     // Same define functions as Variable
 }
@@ -237,7 +237,7 @@ struct Dimension {
 struct Attribute {
     let name: String
     let length: Int
-    
+
     func read<T: NetcdfConvertible>() throws -> T?
     func read<T: NetcdfConvertible>() throws -> [T]?
 }
@@ -251,4 +251,3 @@ Please make sure to update tests as appropriate.
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
-

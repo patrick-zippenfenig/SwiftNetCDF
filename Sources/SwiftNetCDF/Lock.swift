@@ -1,3 +1,5 @@
+// swiftlint:disable all
+
 //===----------------------------------------------------------------------===//
 //
 // This source file is part of the SwiftNIO open source project
@@ -25,23 +27,23 @@ import Glibc
 /// one used by NIO.
 public final class Lock {
     fileprivate let mutex: UnsafeMutablePointer<pthread_mutex_t> = UnsafeMutablePointer.allocate(capacity: 1)
-    
+
     /// Create a new lock.
     public init() {
         var attr = pthread_mutexattr_t()
         pthread_mutexattr_init(&attr);
         pthread_mutexattr_settype(&attr, .init(PTHREAD_MUTEX_ERRORCHECK));
-        
+
         let err = pthread_mutex_init(self.mutex, &attr)
         precondition(err == 0, "\(#function) failed in pthread_mutex with error \(err)")
     }
-    
+
     deinit {
         let err = pthread_mutex_destroy(self.mutex)
         precondition(err == 0, "\(#function) failed in pthread_mutex with error \(err)")
         mutex.deallocate()
     }
-    
+
     /// Acquire the lock.
     ///
     /// Whenever possible, consider using `withLock` instead of this method and
@@ -50,7 +52,7 @@ public final class Lock {
         let err = pthread_mutex_lock(self.mutex)
         precondition(err == 0, "\(#function) failed in pthread_mutex with error \(err)")
     }
-    
+
     /// Release the lock.
     ///
     /// Whenver possible, consider using `withLock` instead of this method and
@@ -78,10 +80,12 @@ extension Lock {
         }
         return try body()
     }
-    
+
     // specialise Void return (for performance)
     @inlinable
-    public func withLockVoid(_ body: () throws -> Void) rethrows -> Void {
+    public func withLockVoid(_ body: () throws -> Void) rethrows {
         try self.withLock(body)
     }
 }
+
+// swiftlint:enable all

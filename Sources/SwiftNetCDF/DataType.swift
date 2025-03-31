@@ -7,80 +7,79 @@
 
 import Foundation
 
-/*public enum DataClass: Int32 {
-    case nc_vlen = 9999 // NC_VLEN
-}
+// public enum DataClass: Int32 {
+//     case nc_vlen = 9999 // NC_VLEN
+// }
 
-public enum DataType {
-    case primitive(ExternalDataType)
-    case userDefined(UserDefinedType)
-    
-    var typeid: TypeId {
-        switch self {
-        case .primitive(let type): return type.typeId
-        case .userDefined(let userDefined): return userDefined.typeid
-        }
-    }
-    var name: String {
-        switch self {
-        case .primitive(let type): return type.name
-        case .userDefined(let userDefined): return userDefined.name
-        }
-    }
-    var byteSize: Int { fatalError() }
-    
-    init(type: TypeId, group: Group) {
-        if let primitve = ExternalDataType(rawValue: type.typeid) {
-            self = DataType.primitive(primitve)
-            return
-        }
-        
-        let typeInq = try! group.ncid.inq_user_type(type: type)
-        // TODO switch user types
-        fatalError()
-        
-    }
-}
+// public enum DataType {
+//     case primitive(ExternalDataType)
+//     case userDefined(UserDefinedType)
 
-public enum UserDefinedType {
-    case enumeration(Enumeration)
-    case compound(Compound)
-    case opaque(Opaque)
-    case variableLength(VariableLength)
-    
-    var typeid: TypeId { fatalError() }
-    var byteSize: Int { fatalError() }
-    var name: String { fatalError() }
-}
+//     var typeid: TypeId {
+//         switch self {
+//         case .primitive(let type): return type.typeId
+//         case .userDefined(let userDefined): return userDefined.typeid
+//         }
+//     }
+//     var name: String {
+//         switch self {
+//         case .primitive(let type): return type.name
+//         case .userDefined(let userDefined): return userDefined.name
+//         }
+//     }
+//     var byteSize: Int { fatalError() }
 
-public struct Compound {
-    let group: Group
-    let typeid: TypeId
-    let name: String
-    let size: Int
-    let numerOfFields: Int
-}
+//     init(type: TypeId, group: Group) {
+//         if let primitive = ExternalDataType(rawValue: type.typeid) {
+//             self = DataType.primitive(primitive)
+//             return
+//         }
 
-public struct Opaque {
-    let group: Group
-    let typeid: TypeId
-    let name: String
-    let size: Int
-}
+//         let typeInq = try! group.ncid.inq_user_type(type: type)
+//         // TODO switch user types
+//         fatalError()
 
-public struct Enumeration {
-    let group: Group
-    let typeid: TypeId
-    let name: String
-    let size: Int
-    let numerOfFields: Int
-}
+//     }
+// }
 
-public struct VariableLength {
-    let group: Group
-    let typeid: TypeId
-    let name: String
-    let size: Int
-    let baseTypeId: Int32
-}
-*/
+// public enum UserDefinedType {
+//     case enumeration(Enumeration)
+//     case compound(Compound)
+//     case opaque(Opaque)
+//     case variableLength(VariableLength)
+
+//     var typeid: TypeId { fatalError() }
+//     var byteSize: Int { fatalError() }
+//     var name: String { fatalError() }
+// }
+
+// public struct Compound {
+//     let group: Group
+//     let typeid: TypeId
+//     let name: String
+//     let size: Int
+//     let numberOfFields: Int
+// }
+
+// public struct Opaque {
+//     let group: Group
+//     let typeid: TypeId
+//     let name: String
+//     let size: Int
+// }
+
+// public struct Enumeration {
+//     let group: Group
+//     let typeid: TypeId
+//     let name: String
+//     let size: Int
+//     let numberOfFields: Int
+// }
+
+// public struct VariableLength {
+//     let group: Group
+//     let typeid: TypeId
+//     let name: String
+//     let size: Int
+//     let baseTypeId: Int32
+// }
