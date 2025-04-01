@@ -10,20 +10,21 @@ env:
   swift_package_resolve: swift package resolve
   swift_build: swift build --build-tests
   swift_test: swift test
-  cache_version: 1
 jobs:
   macOS:
     strategy:
       fail-fast: false
       matrix:
-        xcode: ["15.4", "15.2", "14.3.1"]
+        xcode: ["16.2", "16.1", "16.0", "15.4"]
         include:
+          - xcode: "16.2"
+            macos: macos-15
+          - xcode: "16.1"
+            macos: macos-15
+          - xcode: "16.0"
+            macos: macos-15
           - xcode: "15.4"
-            macos: macOS-14
-          - xcode: "15.2"
-            macos: macOS-14
-          - xcode: "14.3.1"
-            macos: macOS-14
+            macos: macos-14
     runs-on: ${{ matrix.macos }}
     name: macOS
     steps:
@@ -37,14 +38,14 @@ jobs:
       shell: bash
     - name: Cache resolved dependencies
       id: cache-resolved-dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: |
           .build
           Package.resolved
-        key: ${{ runner.os }}-${{ matrix.xcode }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-${{ hashFiles('Package.swift', 'Package.resolved') }}
+        key: ${{ runner.os }}-${{ matrix.xcode }}-${{ steps.get-swift-version.outputs.version }}-spm-deps-${{ hashFiles('Package.swift', 'Package.resolved') }}
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.xcode }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-
+          ${{ runner.os }}-${{ matrix.xcode }}-${{ steps.get-swift-version.outputs.version }}-spm-deps-
     - name: Resolve dependencies
       if: steps.cache-resolved-dependencies.outputs.cache-hit != 'true'
       run: ${{ env.swift_package_resolve }}
@@ -58,17 +59,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        swift: ["5.10", "5.9", "5.8"]
+        swift: ["6.0", "5.10"]
         include:
+          - swift: "6.0"
+            container: "swift:6.0"
           - swift: "5.10"
             container: "swift:5.10"
-            cache-version: 1
-          - swift: "5.9"
-            container: "swift:5.9"
-            cache-version: 1
-          - swift: "5.8"
-            container: "swift:5.8"
-            cache-version: 1
     runs-on: ubuntu-20.04
     container: ${{ matrix.container }}
     name: Linux
@@ -81,14 +77,14 @@ jobs:
     - uses: actions/checkout@master
     - name: Cache resolved dependencies
       id: cache-resolved-dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v4
       with:
         path: |
           .build
           Package.resolved
-        key: ${{ matrix.cache-version }}-${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-${{ hashFiles('Package.swift', 'Package.resolved') }}
+        key: ${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-spm-deps-${{ hashFiles('Package.swift', 'Package.resolved') }}
         restore-keys: |
-          ${{ matrix.cache-version }}-${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-${{ env.cache_version }}-spm-deps-
+          ${{ runner.os }}-${{ steps.get-swift-version.outputs.version }}-spm-deps-
     - name: Install netcdf
       run: apt-get update && apt-get -qq -y install libnetcdf-dev
     - name: Resolve dependencies
