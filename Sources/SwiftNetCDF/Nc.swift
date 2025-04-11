@@ -67,6 +67,7 @@ public struct VarId {
             try Nc.exec {
                 nc_inq_att(ncid.ncid, varid, name, &typeid, &len)
             }
+            precondition(len >= 0, "len has overflown")
             return (TypeId(typeid), len)
         } catch NetCDFError.attributeNotFound {
             return nil
@@ -85,6 +86,7 @@ public struct VarId {
 
     /// Set a new attribute
     public func put_att(name: String, type: TypeId, length: Int, ptr: UnsafeRawPointer) throws {
+        precondition(length >= 0, "length is negative")
         try Nc.exec {
             nc_put_att(ncid.ncid, varid, name, type.typeid, length, ptr)
         }
@@ -118,6 +120,8 @@ public struct VarId {
 
     /// Read the variable by offset and count vector into a buffer
     public func get_vara(offset: [Int], count: [Int], buffer: UnsafeMutableRawPointer) throws {
+        precondition(offset.allSatisfy { $0 >= 0 }, "elements of offset are negative")
+        precondition(count.allSatisfy { $0 >= 0 }, "elements of count are negative")
         try Nc.exec {
             nc_get_vara(ncid.ncid, varid, offset, count, buffer)
         }
@@ -125,6 +129,9 @@ public struct VarId {
 
     /// Read the variable by offset, count and stride vector into a buffer
     public func get_vars(offset: [Int], count: [Int], stride: [Int], buffer: UnsafeMutableRawPointer) throws {
+        precondition(offset.allSatisfy { $0 >= 0 }, "elements of offset are negative")
+        precondition(count.allSatisfy { $0 >= 0 }, "elements of count are negative")
+        precondition(stride.allSatisfy { $0 >= 0 }, "elements of stride are negative")
         try Nc.exec {
             nc_get_vars(ncid.ncid, varid, offset, count, stride, buffer)
         }
@@ -132,6 +139,8 @@ public struct VarId {
 
     /// Write a buffer by offset and count into this variable
     public func put_vara(offset: [Int], count: [Int], ptr: UnsafeRawPointer) throws {
+        precondition(offset.allSatisfy { $0 >= 0 }, "elements of offset are negative")
+        precondition(count.allSatisfy { $0 >= 0 }, "elements of count are negative")
         try Nc.exec {
             nc_put_vara(ncid.ncid, varid, offset, count, ptr)
         }
@@ -139,6 +148,9 @@ public struct VarId {
 
     /// Write a buffer by offset, count and stride into this variable
     public func put_vars(offset: [Int], count: [Int], stride: [Int], ptr: UnsafeRawPointer) throws {
+        precondition(offset.allSatisfy { $0 >= 0 }, "elements of offset are negative")
+        precondition(count.allSatisfy { $0 >= 0 }, "elements of count are negative")
+        precondition(stride.allSatisfy { $0 >= 0 }, "elements of stride are negative")
         try Nc.exec {
             nc_put_vars(ncid.ncid, varid, offset, count, stride, ptr)
         }
@@ -167,6 +179,7 @@ public struct VarId {
 
     /// Set chunking options
     public func def_var_chunking(type: Chunking, chunks: [Int]) throws {
+        precondition(chunks.allSatisfy { $0 >= 0 }, "elements of chunks are negative")
         try Nc.exec {
             return nc_def_var_chunking(ncid.ncid, varid, type.netcdfValue, chunks)
         }
@@ -251,6 +264,7 @@ public struct NcId {
         let name = try Nc.execWithStringBuffer {
             nc_inq_type(ncid, type.typeid, $0, &size)
         }
+        precondition(size >= 0, "size has overflown")
         return (name, size)
     }
 
@@ -263,6 +277,8 @@ public struct NcId {
         let name = try Nc.execWithStringBuffer {
             nc_inq_user_type(ncid, type.typeid, $0, &size, &baseTypeId, &numberOfFields, &classType)
         }
+        precondition(size >= 0, "size has overflown")
+        precondition(numberOfFields >= 0, "numberOfFields has overflown")
         return (name, size, TypeId(baseTypeId), numberOfFields, classType)
     }
 
@@ -349,6 +365,7 @@ public struct NcId {
         try! Nc.exec {
             nc_inq_grpname_len(ncid, &nameLength)
         }
+        precondition(nameLength >= 0, "nameLength has overflown")
         var nameBuffer = [Int8](repeating: 0, count: nameLength + 1)
         try! Nc.exec {
             nc_inq_grpname(ncid, &nameBuffer)
@@ -449,12 +466,14 @@ public struct NcId {
         let name = try! Nc.execWithStringBuffer {
             nc_inq_dim(ncid, dimid.dimid, $0, &len)
         }
+        precondition(len >= 0, "len has overflown")
         return (name, len)
     }
 
     /// Define a new dimension
     public func def_dim(name: String, length: DimId.Length) throws -> DimId {
         var dimid: Int32 = 0
+        precondition(length.netCdfValue >= 0, "length is negative")
         try Nc.exec {
             nc_def_dim(ncid, name, length.netCdfValue, &dimid)
         }
@@ -561,6 +580,7 @@ public extension Nc {
 
     /// Free memory for returned string arrays
     static func free_string(len: Int, stringArray: UnsafeMutablePointer<UnsafeMutablePointer<Int8>?>) {
+        precondition(len >= 0, "len is negative")
         /// no error should be possible
         try! exec {
             nc_free_string(len, stringArray)
