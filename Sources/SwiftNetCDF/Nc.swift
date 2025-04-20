@@ -163,16 +163,36 @@ public struct VarId {
         }
     }
 
+    /// SzipOptions Flags
+    public struct SzipOptions: OptionSet {
+        public let rawValue: Int32
+        
+        static let entropyEncoding = SzipOptions(rawValue: NC_SZIP_EC)
+        static let nearestNeighbor = SzipOptions(rawValue: NC_SZIP_NN)
+        
+        public init(rawValue: Int32) {
+            self.rawValue = rawValue
+        }
+    }
+    
+    /// Set Szip options
+    public func def_var_szip(options: SzipOptions, deflate: Bool, pixel_per_block: Int32) throws {
+        try Nc.exec {
+            nc_def_var_szip(ncid.ncid, varid, options.rawValue, pixel_per_block)
+        }
+    }
     /// Options for chunking
     public enum Chunking {
         case chunked
-        // TODO: fix this typo `contingous` ->  `continuous`
+        case contiguous
+        
+        @available(*, deprecated, renamed: "contiguous")
         case contingous
 
         fileprivate var netcdfValue: Int32 {
             switch self {
             case .chunked: return NC_CHUNKED
-            case .contingous: return NC_CONTIGUOUS
+            case .contingous, .contiguous: return NC_CONTIGUOUS
             }
         }
     }
@@ -185,9 +205,12 @@ public struct VarId {
         }
     }
 
-    // TODO: fix this typo `flechter32` -> `fletcher32`
-    /// Set fletcher32 options
+    @available(*, deprecated, renamed: "def_var_fletcher32")
     public func def_var_flechter32(enable: Bool) throws {
+        try def_var_fletcher32(enable: enable)
+    }
+    /// Set fletcher32 options
+    public func def_var_fletcher32(enable: Bool) throws {
         try Nc.exec {
             nc_def_var_fletcher32(ncid.ncid, varid, enable ? 1 : 0)
         }
