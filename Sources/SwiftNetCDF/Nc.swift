@@ -167,8 +167,8 @@ public struct VarId {
     public struct SzipOptions: OptionSet {
         public let rawValue: Int32
 
-        static let entropyEncoding = SzipOptions(rawValue: NC_SZIP_EC)
-        static let nearestNeighbor = SzipOptions(rawValue: NC_SZIP_NN)
+        public static let entropyEncoding = SzipOptions(rawValue: NC_SZIP_EC)
+        public static let nearestNeighbor = SzipOptions(rawValue: NC_SZIP_NN)
 
         public init(rawValue: Int32) {
             self.rawValue = rawValue
