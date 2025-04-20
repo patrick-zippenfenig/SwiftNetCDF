@@ -166,17 +166,17 @@ public struct VarId {
     /// SzipOptions Flags
     public struct SzipOptions: OptionSet {
         public let rawValue: Int32
-        
+
         static let entropyEncoding = SzipOptions(rawValue: NC_SZIP_EC)
         static let nearestNeighbor = SzipOptions(rawValue: NC_SZIP_NN)
-        
+
         public init(rawValue: Int32) {
             self.rawValue = rawValue
         }
     }
-    
+
     /// Set Szip options
-    public func def_var_szip(options: SzipOptions, deflate: Bool, pixel_per_block: Int32) throws {
+    public func def_var_szip(options: SzipOptions, pixel_per_block: Int32) throws {
         try Nc.exec {
             nc_def_var_szip(ncid.ncid, varid, options.rawValue, pixel_per_block)
         }
@@ -185,7 +185,7 @@ public struct VarId {
     public enum Chunking {
         case chunked
         case contiguous
-        
+
         @available(*, deprecated, renamed: "contiguous")
         case contingous
 

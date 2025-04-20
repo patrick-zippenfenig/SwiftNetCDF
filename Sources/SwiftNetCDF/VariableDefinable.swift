@@ -45,6 +45,28 @@ public extension VariableDefinable {
         try varid.def_var_deflate(shuffle: shuffle, deflate: enable, deflate_level: Int32(level))
     }
 
+    /// Set szip compression settings on a variable.
+    ///
+    /// Szip is an implementation of the extended-Rice lossless compression algorithm; it is reported to provide fast and effective compression. Szip is only available to netCDF if HDF5 was built with szip support.
+    ///
+    /// SZIP compression cannot be applied to variables with any user-defined type.
+    ///
+    /// If zlib compression has already be turned on for a variable, then this function will return NC_EINVAL.
+    ///
+    /// To learn the szip settings for a variable, use nc_inq_var_szip().
+    ///
+    /// Note: The options_mask parameter may be either NC_SZIP_EC (entropy coding) or NC_SZIP_NN (nearest neighbor):
+    ///  - The entropy coding method is best suited for data that has been processed. The EC method works best for small numbers.
+    ///  - The nearest neighbor coding method preprocesses the data then the applies EC method as above.
+    /// For more information about HDF5 and szip, see https://support.hdfgroup.org/HDF5/doc/RM/RM_H5P.html#Property-SetSzip and https://support.hdfgroup.org/doc_resource/SZIP/index.html.
+    ///
+    /// - Parameters-
+    /// - options_mask    The options mask. Can be NC_SZIP_EC or NC_SZIP_NN.
+    /// - pixels_per_block    Pixels per block. Must be even and not greater than 32, with typical values being 8, 10, 16, or 32. This parameter affects compression ratio; the more pixel values vary, the smaller this number should be to achieve better performance. If pixels_per_block is bigger than the total number of elements in a dataset chunk, NC_EINVAL will be returned.
+    func defineSzip(options: VarId.SzipOptions, pixelPerBlock: Int32) throws {
+        try varid.def_var_szip(options: options, pixel_per_block: pixelPerBlock)
+    }
+
     /// Define chunking parameters for a variable.
     ///
     /// The function nc_def_var_chunking sets the chunking parameters for a variable in a netCDF-4 file. It can set the chunk sizes to get chunked storage, or it can set the contiguous flag to get contiguous storage.
@@ -67,7 +89,7 @@ public extension VariableDefinable {
     ///
     /// Checksums require chunked data. If this function is called on a variable with contiguous data, then the data is changed to chunked data, with default chunksizes. Use nc_def_var_chunking() to tune performance with user-defined chunksizes.
     func defineChecksuming(enable: Bool) throws {
-        try varid.def_var_flechter32(enable: enable)
+        try varid.def_var_fletcher32(enable: enable)
     }
 
     /// Define endianness of a variable.
