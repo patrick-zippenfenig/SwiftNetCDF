@@ -16,7 +16,7 @@ public extension ExternalDataType {
 }
 
 /// Represent a data type ID. Could be an external or user-defined type.
-public struct TypeId: Equatable {
+public struct TypeId: Equatable, Sendable {
     let typeid: Int32
 
     fileprivate init(_ typeid: Int32) {
