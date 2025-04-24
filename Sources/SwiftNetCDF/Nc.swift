@@ -167,8 +167,8 @@ public struct VarId {
     public struct SzipOptions: OptionSet {
         public let rawValue: Int32
 
-        public static let entropyEncoding = SzipOptions(rawValue: NC_SZIP_EC)
-        public static let nearestNeighbor = SzipOptions(rawValue: NC_SZIP_NN)
+        public static let entropyEncoding = SzipOptions(rawValue: 4) // NC_SZIP_EC (only available in netcdf 4.9.x and later https://github.com/Unidata/netcdf-c/commit/d1cbd60960bb1bff1d5d145ccddda2389ca49dbc)
+        public static let nearestNeighbor = SzipOptions(rawValue: 32) // NC_SZIP_NN
 
         public init(rawValue: Int32) {
             self.rawValue = rawValue
