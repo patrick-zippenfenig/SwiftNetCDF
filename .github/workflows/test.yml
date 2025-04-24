@@ -65,7 +65,7 @@ jobs:
             container: "swift:6.0"
           - swift: "5.10"
             container: "swift:5.10"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     name: Linux
     steps:
