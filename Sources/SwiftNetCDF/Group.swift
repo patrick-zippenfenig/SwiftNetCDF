@@ -7,9 +7,10 @@
 
 import Foundation
 
-public final class Group {
-    /// Parent in case of this is a subgroup. Nil if this group if the root group
-    public let parent: Group?
+
+public struct Group {
+    /// Parent is either another group or the file root
+    public let parent: RootOrGroup
 
     /// Netcdf ncid of the group. Offers methods to query additional information
     public let ncid: NcId
@@ -18,8 +19,15 @@ public final class Group {
     public let name: String
 
     /// Existing group from ID.
-    init(ncid: NcId, parent: Group?) {
-        self.parent = parent
+    init(ncid: NcId, root: any NcRootProvider) {
+        self.parent = .root(root)
+        self.ncid = ncid
+        self.name = ncid.inq_grpname()
+    }
+    
+    /// Existing group from ID.
+    init(ncid: NcId, parent: Group) {
+        self.parent = .group(parent)
         self.ncid = ncid
         self.name = ncid.inq_grpname()
     }
@@ -27,15 +35,8 @@ public final class Group {
     /// Create a new group
     init(name: String, parent: Group) throws {
         self.ncid = try parent.ncid.def_grp(name: name)
-        self.parent = parent
+        self.parent = .group(parent)
         self.name = name
-    }
-
-    /// Close the netcdf file if this is the last group
-    deinit {
-        if parent == nil {
-            try? ncid.close()
-        }
     }
 
     /// Return all dimensions registered in this group

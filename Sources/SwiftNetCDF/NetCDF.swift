@@ -28,7 +28,7 @@ public enum NetCDF {
     /// - Returns: Root group of a NetCDF file
     public static func create(path: String, overwriteExisting: Bool, useNetCDF4: Bool = true) throws -> Group {
         let ncid = try Nc.create(path: path, overwriteExisting: overwriteExisting, useNetCDF4: useNetCDF4)
-        return Group(ncid: ncid, parent: nil)
+        return Group(ncid: ncid, root: FileRoot(ncid: ncid))
     }
 
     /// Open an existing netCDF file.
@@ -50,13 +50,13 @@ public enum NetCDF {
     public static func open(path: String, allowUpdate: Bool) throws -> Group? {
         do {
             let ncid = try Nc.open(path: path, allowUpdate: allowUpdate)
-            return Group(ncid: ncid, parent: nil)
+            return Group(ncid: ncid, root: FileRoot(ncid: ncid))
         } catch NetCDFError.noSuchFileOrDirectory {
             return nil
         }
     }
 
-    /// Open a netCDF file with the contents taken from a block of memory.
+    /// Open a netCDF file with the contents taken from a block of memory. Retains a reference to the memory block.
     ///
     /// This function opens an existing netCDF dataset for access. It determines the underlying file format automatically. Use the same call to open a netCDF classic or netCDF-4 file.
     ///
@@ -72,10 +72,12 @@ public enum NetCDF {
     ///    - `NetCDFError.netCDF4MetedataError` Error in netCDF-4 dimension metadata. (NetCDF-4 files only.)
     ///
     /// - Returns: Root group of a NetCDF file or nil if memory cannot be opened as a netcdf handle
-    public static func open(memory: UnsafeRawBufferPointer, datasetName: String = "dataset") throws -> Group? {
+    public static func open<D: ContiguousBytes>(memory: D, datasetName: String = "dataset") throws -> Group? {
         do {
-            let ncid = try Nc.open(memory: memory, datasetName: datasetName)
-            return Group(ncid: ncid, parent: nil)
+            return try memory.withUnsafeBytes({
+                let ncid = try Nc.open(memory: $0, datasetName: datasetName)
+                return Group(ncid: ncid, root: MemoryRoot(ncid: ncid, fn: memory))
+            })
         } catch NetCDFError.noSuchFileOrDirectory {
             return nil
         }
