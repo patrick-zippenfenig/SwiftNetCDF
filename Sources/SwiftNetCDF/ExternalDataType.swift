@@ -8,7 +8,7 @@
 import Foundation
 
 /// These datatypes are available as external and are mapped to Swift datatypes with the protocol `NetcdfConvertible`.
-public enum ExternalDataType: Int32 {
+public enum ExternalDataType: Int32, Sendable {
     /// NC_BYTE Int8 8-bit signed integer
     case byte = 1
     /// NC_CHAR Int8 8-bit character
